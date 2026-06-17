@@ -17,6 +17,12 @@ pnpm-debug.log*
 .env.production.local
 
 # =====================
+# Config Files with Secrets
+# =====================
+config/config.env
+config/*.env
+
+# =====================
 # Build Outputs
 # =====================
 dist/
