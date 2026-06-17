@@ -19,8 +19,8 @@ pnpm-debug.log*
 # =====================
 # Config Files with Secrets
 # =====================
-config/config.env
-config/*.env
+**/config.env
+**/config/*.env
 
 # =====================
 # Build Outputs
