@@ -1,5 +1,6 @@
 {
   "name": "shopit",
+  "type": "module",
   "version": "1.0.0",
   "description": "Ecommece IT related product selling website.",
   "homepage": "https://github.com/SyedMahib/ShopIT#readme",
@@ -12,7 +13,6 @@
   },
   "license": "ISC",
   "author": "Syed Mahib",
-  "type": "commonjs",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
