@@ -17,7 +17,8 @@
   "scripts": {
     "start": "node Backend/app.js",
     "dev": "NODE_ENV=development nodemon Backend/app.js",
-    "prod": "NODE_ENV=production nodemon Backend/app.js"
+    "prod": "NODE_ENV=production nodemon Backend/app.js",
+    "seeder": "node Backend/seeder/seeder.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
