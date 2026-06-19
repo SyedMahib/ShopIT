@@ -15,12 +15,12 @@
   "author": "Syed Mahib",
   "main": "dist/app.js",
   "scripts": {
-    "start": "node dist/app.js",
-    "dev": "NODE_ENV=development nodemon --exec 'node --loader ts-node/esm' Backend/app.ts",
-    "build": "tsc",
-    "prod": "NODE_ENV=production node dist/app.js",
-    "seeder": "node --loader ts-node/esm Backend/seeder/seeder.ts"
-  },
+  "start": "node dist/app.js",
+  "dev": "NODE_ENV=development nodemon --exec tsx Backend/app.ts",
+  "build": "tsc",
+  "prod": "NODE_ENV=production node dist/app.js",
+  "seeder": "tsx Backend/seeder/seeder.ts"
+},
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -30,7 +30,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.21",
     "nodemon": "^3.1.14",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.0"
   }
 }
