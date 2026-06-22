@@ -4,6 +4,13 @@ import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import errorMiddleware from "./middlewares/error.js";
 
+
+process.on("uncaughtException", (err) => {
+  console.log(`Error: ${err}`);
+  console.log("Shutting down the server due to Uncaught Exception");
+  process.exit(1);
+})
+
 dotenv.config({ path: "Backend/config/config.env" });
 
 const app = express();
@@ -12,6 +19,7 @@ const app = express();
 connectDatabase();
 
 app.use(express.json());
+
 
 // Routes
 app.use("/api/v1", productRoutes);
