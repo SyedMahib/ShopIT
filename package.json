@@ -16,7 +16,7 @@
   "main": "dist/app.js",
   "scripts": {
   "start": "node dist/app.js",
-  "dev": "NODE_ENV=development nodemon --exec tsx Backend/app.ts",
+  "dev": "tsx watch Backend/app.ts",
   "build": "tsc",
   "prod": "NODE_ENV=production node dist/app.js",
   "seeder": "tsx Backend/seeder/seeder.ts"
