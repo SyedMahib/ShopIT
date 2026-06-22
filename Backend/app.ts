@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
+import errorMiddleware from "./middlewares/error.js"
 
 dotenv.config({ path: "Backend/config/config.env" });
 
@@ -14,6 +15,12 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1", productRoutes);
+
+
+
+// Using Error Middlewares
+
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT as string;
 

@@ -1,12 +1,18 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import Product from "../models/product.js";
+import ErrorHandler from "../utils/errorHandler.js";
 
 // Get all products => GET /api/v1/products
 export const getProducts = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const products = await Product.find();
+
+  if (!products) {
+    next(new ErrorHandler('Products not found', 404));
+  }
 
   res.status(200).json({
     products,
@@ -28,14 +34,13 @@ export const newProduct = async (
 // Get single product details => GET /api/v1/products/:id
 export const getProductDetails = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const product = await Product.findById(req.params?.id);
 
   if (!product) {
-    res.status(404).json({
-      error: "Product not found",
-    });
+    next(new ErrorHandler("Product not found", 404));
     return;
   }
 
@@ -47,14 +52,13 @@ export const getProductDetails = async (
 // Update product details => PUT /api/v1/products/:id
 export const updateProduct = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   let product = await Product.findById(req.params?.id);
 
   if (!product) {
-    res.status(404).json({
-      error: "Product not found",
-    });
+    next(new ErrorHandler("Product not found", 404));
     return;
   }
 
@@ -71,14 +75,13 @@ export const updateProduct = async (
 // Delete product => DELETE /api/v1/products/:id
 export const deleteProduct = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const product = await Product.findById(req.params?.id);
 
   if (!product) {
-    res.status(404).json({
-      error: "Product not found",
-    });
+    next(new ErrorHandler("Product not found", 404));
     return;
   }
 
