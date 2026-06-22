@@ -1,93 +1,85 @@
 import { NextFunction, Request, Response } from "express";
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
+import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 
 // Get all products => GET /api/v1/products
-export const getProducts = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const products = await Product.find();
+export const getProducts = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const products = await Product.find();
 
-  if (!products) {
-    next(new ErrorHandler('Products not found', 404));
-  }
+    if (!products) {
+      next(new ErrorHandler("Products not found", 404));
+    }
 
-  res.status(200).json({
-    products,
-  });
-};
+    res.status(200).json({
+      products,
+    });
+  },
+);
 
 // Create new product => POST /api/v1/admin/products
-export const newProduct = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const product = await Product.create(req.body);
+export const newProduct = catchAsyncErrors(
+  async (req: Request, res: Response): Promise<void> => {
+    const product = await Product.create(req.body);
 
-  res.status(201).json({
-    product,
-  });
-};
+    res.status(201).json({
+      product,
+    });
+  },
+);
 
 // Get single product details => GET /api/v1/products/:id
-export const getProductDetails = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const product = await Product.findById(req.params?.id);
+export const getProductDetails = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const product = await Product.findById(req.params?.id);
 
-  if (!product) {
-    next(new ErrorHandler("Product not found", 404));
-    return;
-  }
+    if (!product) {
+      next(new ErrorHandler("Product not found", 404));
+      return;
+    }
 
-  res.status(200).json({
-    product,
-  });
-};
+    res.status(200).json({
+      product,
+    });
+  },
+);
 
 // Update product details => PUT /api/v1/products/:id
-export const updateProduct = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  let product = await Product.findById(req.params?.id);
+export const updateProduct = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    let product = await Product.findById(req.params?.id);
 
-  if (!product) {
-    next(new ErrorHandler("Product not found", 404));
-    return;
-  }
+    if (!product) {
+      next(new ErrorHandler("Product not found", 404));
+      return;
+    }
 
-  product = await Product.findByIdAndUpdate(req.params?.id, req.body, {
-    returnDocument: "after",
-    runvalidators: true,
-  });
+    product = await Product.findByIdAndUpdate(req.params?.id, req.body, {
+      returnDocument: "after",
+      runvalidators: true,
+    });
 
-  res.status(200).json({
-    product,
-  });
-};
+    res.status(200).json({
+      product,
+    });
+  },
+);
 
 // Delete product => DELETE /api/v1/products/:id
-export const deleteProduct = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const product = await Product.findById(req.params?.id);
+export const deleteProduct = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const product = await Product.findById(req.params?.id);
 
-  if (!product) {
-    next(new ErrorHandler("Product not found", 404));
-    return;
-  }
+    if (!product) {
+      next(new ErrorHandler("Product not found", 404));
+      return;
+    }
 
-  await product.deleteOne();
+    await product.deleteOne();
 
-  res.status(200).json({
-    message: "Product deleted successfully",
-  });
-};
+    res.status(200).json({
+      message: "Product deleted successfully",
+    });
+  },
+);
