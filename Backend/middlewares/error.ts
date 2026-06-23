@@ -19,6 +19,13 @@ if (err.name === "CastError") {
   error = new ErrorHandler(message, 404);
 }
 
+// Handle Validation Error
+
+if (err.name === "ValidationError") {
+  const message = Object.values(err.errors).map((value: any) => value.message).join(", ");
+  error = new ErrorHandler(message, 400);
+}
+
 
   if (process.env.NODE_ENV === "development") {
     res.status(error.statusCode).json({
