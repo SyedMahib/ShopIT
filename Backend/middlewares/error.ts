@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import ErrorHandler from "../utils/errorHandler.js";
 
 export default (
-  err: ErrorHandler,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction,
@@ -11,6 +11,14 @@ export default (
     statusCode: err?.statusCode || 500,
     message: err?.message || "Internal Server Error",
   };
+
+// Handle Invalid Mongoose ID error
+
+if (err.name === "CastError") {
+  const message = `Resource not found. Invalid: ${err?.path}`;
+  error = new ErrorHandler(message, 404);
+}
+
 
   if (process.env.NODE_ENV === "development") {
     res.status(error.statusCode).json({
