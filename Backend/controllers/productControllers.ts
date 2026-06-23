@@ -1,21 +1,25 @@
 import { NextFunction, Request, Response } from "express";
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
+import APIFilters from "../utils/apiFilters.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 
 // Get all products => GET /api/v1/products
 export const getProducts = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const products = await Product.find();
+  async (req: Request, res: Response): Promise<void> => {
+    const apiFilters = new APIFilters(
+      Product.find(),
+      req.query as Record<string, string>
+    ).search();
 
-    if (!products) {
-      next(new ErrorHandler("Products not found", 404));
-    }
+    const products = await apiFilters.query;
+    const filteredProductsCount = products.length;
 
     res.status(200).json({
+      filteredProductsCount,
       products,
     });
-  },
+  }
 );
 
 // Create new product => POST /api/v1/admin/products
@@ -26,7 +30,7 @@ export const newProduct = catchAsyncErrors(
     res.status(201).json({
       product,
     });
-  },
+  }
 );
 
 // Get single product details => GET /api/v1/products/:id
@@ -42,7 +46,7 @@ export const getProductDetails = catchAsyncErrors(
     res.status(200).json({
       product,
     });
-  },
+  }
 );
 
 // Update product details => PUT /api/v1/products/:id
@@ -63,7 +67,7 @@ export const updateProduct = catchAsyncErrors(
     res.status(200).json({
       product,
     });
-  },
+  }
 );
 
 // Delete product => DELETE /api/v1/products/:id
@@ -81,5 +85,5 @@ export const deleteProduct = catchAsyncErrors(
     res.status(200).json({
       message: "Product deleted successfully",
     });
-  },
+  }
 );
