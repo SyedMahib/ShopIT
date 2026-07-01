@@ -7,15 +7,21 @@ import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 // Get all products => GET /api/v1/products
 export const getProducts = catchAsyncErrors(
   async (req: Request, res: Response): Promise<void> => {
+
+    const resPerPage = 4;
     const apiFilters = new APIFilters(
       Product.find(),
       req.query as Record<string, string>
     ).search();
 
-    const products = await apiFilters.query;
+    let products = await apiFilters.query;
     const filteredProductsCount = products.length;
 
+    apiFilters.pagination(resPerPage);
+    products = await apiFilters.query.clone();
+
     res.status(200).json({
+      resPerPage,
       filteredProductsCount,
       products,
     });
