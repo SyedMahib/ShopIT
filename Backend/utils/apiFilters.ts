@@ -22,6 +22,21 @@ class APIFilters {
         this.query = this.query.find({ ...keyword });
         return this;
     };
+
+    filters() {
+        const queryCopy = { ...this.queryStr };
+
+        // Fields to remove from the query string
+        const fieldsToRemove = ["Keyword"];
+        fieldsToRemove.forEach((el) => delete queryCopy[el]);
+
+        // Advance filter for price, rating, etc.
+        let queryStr = JSON.stringify(queryCopy);
+        queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
+
+        this.query = this.query.find(JSON.parse(queryStr));
+        return this;
+    }
 };
 
 
