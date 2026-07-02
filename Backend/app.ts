@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
+import authRoutes from "./routes/auth.js";
 import errorMiddleware from "./middlewares/error.js";
 
 
@@ -23,6 +24,8 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1", productRoutes);
+app.use("/api/v1", authRoutes);
+
 
 // Using Error Middlewares
 
