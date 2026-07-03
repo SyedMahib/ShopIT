@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // ----- InterFaces -----
 export interface IUser extends Document {
@@ -15,6 +16,7 @@ export interface IUser extends Document {
     resetPasswordExpire?: Date;
     createdAt?: Date;
     updatedAt?: Date;
+    getJwtToken(): string;
 }
 
 // ------ Schema ------
@@ -59,5 +61,12 @@ userSchema.pre<IUser>("save", async function () {
 
     this.password = await bcrypt.hash(this.password, 10);
 })
+
+// Return JWT token
+userSchema.methods.getJwtToken = function (): string {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
+        expiresIn: process.env.JWT_EXPIRE,
+    } as any);
+}
 
 export default mongoose.model<IUser>("User", userSchema);
