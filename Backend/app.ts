@@ -4,6 +4,7 @@ import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
 import errorMiddleware from "./middlewares/error.js";
+import cookieParser from "cookie-parser";
 
 
 process.on("uncaughtException", (err) => {
@@ -20,6 +21,7 @@ const app = express();
 connectDatabase();
 
 app.use(express.json());
+app.use(cookieParser());
 
 
 // Routes
