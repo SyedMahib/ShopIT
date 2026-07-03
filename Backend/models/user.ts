@@ -17,6 +17,7 @@ export interface IUser extends Document {
     createdAt?: Date;
     updatedAt?: Date;
     getJwtToken(): string;
+    comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
 // ------ Schema ------
@@ -67,6 +68,11 @@ userSchema.methods.getJwtToken = function (): string {
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
         expiresIn: process.env.JWT_EXPIRE,
     } as any);
+}
+
+// comapre user password
+userSchema.methods.comparePassword = async function (enterdPassword: string): Promise<boolean> {
+    return await bcrypt.compare(enterdPassword, this.password);
 }
 
 export default mongoose.model<IUser>("User", userSchema);
