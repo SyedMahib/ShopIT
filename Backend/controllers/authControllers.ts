@@ -41,3 +41,17 @@ export const loginUser = catchAsyncErrors(
     sendToken(user, 200, res);
   }
 );
+
+
+// LogOut a User => /api/v1/logout
+export const logOutUser = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    res.cookie("token", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    })
+
+    res.status(200).json({
+      messaege: "Logged Out",
+    })
+  })
