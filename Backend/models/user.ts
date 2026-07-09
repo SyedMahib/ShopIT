@@ -1,78 +1,101 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // ----- InterFaces -----
 export interface IUser extends Document {
-    name: string;
-    email: string;
-    password: string;
-    avatar?: {
-        public_id: string;
-        url: string;
-    };
-    role?: string;
-    resetPasswordToken?: string;
-    resetPasswordExpire?: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
-    getJwtToken(): string;
-    comparePassword(enteredPassword: string): Promise<boolean>;
+  name: string;
+  email: string;
+  password: string;
+  avatar?: {
+    public_id: string;
+    url: string;
+  };
+  role?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  getJwtToken(): string;
+  comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
 // ------ Schema ------
 
 const userSchema = new Schema<IUser>(
-    {
-        name: {
-            type: String,
-            required: [true, "Please enter your name"],
-            maxLength: [50, "Your name cannot exceed 50 characters"]
-        },
-        email: {
-            type: String,
-            required: [true, "Please enter your email"],
-            unique: true,
-        },
-        password: {
-            type: String,
-            required: [true, "Please enter your password"],
-            minLength: [6, "Your password must be longer than 6 characters"],
-            select: false
-        },
-        avatar: {
-            public_id: String,
-            url: String,
-        },
-        role: {
-            type: String,
-            default: "user",
-        },
-        resetPasswordToken: String,
-        resetPasswordExpire: Date,
+  {
+    name: {
+      type: String,
+      required: [true, "Please enter your name"],
+      maxLength: [50, "Your name cannot exceed 50 characters"],
     },
-    { timestamps: true }
+    email: {
+      type: String,
+      required: [true, "Please enter your email"],
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Please enter your password"],
+      minLength: [6, "Your password must be longer than 6 characters"],
+      select: false,
+    },
+    avatar: {
+      public_id: String,
+      url: String,
+    },
+    role: {
+      type: String,
+      default: "user",
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+  },
+  { timestamps: true },
 );
 
 // Encrypting Password before saving user
 userSchema.pre<IUser>("save", async function () {
-    if (!this.isModified("password")) {
-        return;
-    }
+  if (!this.isModified("password")) {
+    return;
+  }
 
-    this.password = await bcrypt.hash(this.password, 10);
-})
+  this.password = await bcrypt.hash(this.password, 10);
+});
 
 // Return JWT token
 userSchema.methods.getJwtToken = function (): string {
-    return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
-        expiresIn: process.env.JWT_EXPIRE,
-    } as any);
-}
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_SECRET as string,
+    {
+      expiresIn: process.env.JWT_EXPIRE,
+    } as any,
+  );
+};
 
 // comapre user password
-userSchema.methods.comparePassword = async function (enterdPassword: string): Promise<boolean> {
-    return await bcrypt.compare(enterdPassword, this.password);
-}
+userSchema.methods.comparePassword = async function (
+  enterdPassword: string,
+): Promise<boolean> {
+  return await bcrypt.compare(enterdPassword, this.password);
+};
+
+// Generate Password Reset Token
+userSchema.methods.getResetPasswordToken = function (): string {
+  //  Generate Token
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  // Hashing and adding resetPasswordToken to userSchema
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
+
+  return resetToken;
+};
 
 export default mongoose.model<IUser>("User", userSchema);
