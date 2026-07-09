@@ -19,6 +19,7 @@ export interface IUser extends Document {
   updatedAt?: Date;
   getJwtToken(): string;
   comparePassword(enteredPassword: string): Promise<boolean>;
+  getResetPasswordToken(): string;
 }
 
 // ------ Schema ------

@@ -73,7 +73,7 @@ export const getResetPasswordTemplate = (userName: string, resetUrl: string): st
 
                     <!-- Instruction -->
                     <p style="margin: 0 0 28px 0; font-size: 15px; color: #475569; line-height: 1.7; text-align: center;">
-                      Click the button below to create a new password. This link will expire in <strong style="color: #dc2626;">15 minutes</strong>.
+                      Click the button below to create a new password. This link will expire in <strong style="color: #dc2626;">30 minutes</strong>.
                     </p>
 
                     <!-- CTA Button -->
