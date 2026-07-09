@@ -124,7 +124,7 @@ const productSchema = new Schema<IProduct>(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: false,
+      required: true,
     },
   },
   { timestamps: true }

@@ -31,6 +31,9 @@ export const getProducts = catchAsyncErrors(
 // Create new product => POST /api/v1/admin/products
 export const newProduct = catchAsyncErrors(
   async (req: Request, res: Response): Promise<void> => {
+
+    req.body.user = req.user?._id;
+
     const product = await Product.create(req.body);
 
     res.status(201).json({
@@ -64,6 +67,8 @@ export const updateProduct = catchAsyncErrors(
       next(new ErrorHandler("Product not found", 404));
       return;
     }
+
+    req.body.user = req.user?._id;
 
     product = await Product.findByIdAndUpdate(req.params?.id, req.body, {
       returnDocument: "after",
