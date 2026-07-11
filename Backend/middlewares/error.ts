@@ -26,6 +26,26 @@ if (err.name === "ValidationError") {
   error = new ErrorHandler(message, 400);
 }
 
+//Handle Mongoose Duplicate Key error
+
+if (err.code === 11000) {
+  const message = `Duplicate ${Object.keys(err.keyValue)} entered`;
+  error = new ErrorHandler(message, 400);
+}
+
+//Handle wrong JWT error
+
+if (err.name === "JsonWebTokenError") {
+  const message = `Json Web Token is Invalid, please try again!!!`;
+  error = new ErrorHandler(message, 401);
+}
+
+//Handle wrong JWT error
+
+if (err.name === "tokenExpireError") {
+  const message = `JSON web token is expired, please try again.`;
+  error = new ErrorHandler(message, 401);
+}
 
   if (process.env.NODE_ENV === "development") {
     res.status(error.statusCode).json({
