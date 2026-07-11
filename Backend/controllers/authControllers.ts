@@ -137,3 +137,15 @@ export const resetPassword = catchAsyncErrors(
 
     sendToken(user, 200, res);
   })
+
+  // Get Current user profile => /api/v1/me
+
+  export const getUserProfile = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const user = await User.findById(req?.user?._id);
+
+      res.status(200).json({
+        user,
+      })
+    }
+  )
