@@ -180,3 +180,53 @@ export const resetPassword = catchAsyncErrors(
       })
     }
   )
+
+     // Update User Profile => /api/v1/password/update
+
+  export const updateProfile = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+     
+      const newUserData = {
+        name: req.body.name,
+        email: req.body.email,
+      };
+
+      const user = await User.findByIdAndUpdate(req.user?._id, newUserData, {
+        new: true,
+      })
+
+      res.status(200).json({
+        user
+      })
+    }
+  )
+
+      // Get All Users - Admin => /api/v1/admin/users
+
+  export const allUsers = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+     
+      const users = await User.find();
+
+      res.status(200).json({
+        users,
+      })
+    }
+  )
+
+  // Get Users details - Admin => /api/v1/admin/users/:id
+
+  export const getUserDetails = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+     
+      const user = await User.findById(req.params.id);
+
+      if(!user){
+        return next(new ErrorHandler(`User not found with the id: ${req.params.id}`, 404))
+      }
+
+      res.status(200).json({
+        user,
+      })
+    }
+  )
