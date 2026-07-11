@@ -167,6 +167,11 @@ export const resetPassword = catchAsyncErrors(
         return next(new ErrorHandler("Old password is incorrect", 400));
       }
 
+      // Validate password length before saving
+      if (req.body.password.length < 6) {
+        return next(new ErrorHandler("Password must be at least 6 characters long", 400));
+      }
+
       user.password = req.body.password;
       await user.save();
 
