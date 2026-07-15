@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Order from "../models/order.js";
+import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 
 // Create new order => /api/v1/orders/new
@@ -72,5 +73,42 @@ export const allOrders = catchAsyncErrors(async (req: Request, res: Response, ne
 
   res.status(200).json({
     orders,
+  })
+})
+
+// Upadate orders - Admin => /api/v1/admin/orders/:id
+
+export const updateOrder = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new ErrorHandler("No order found with this ID", 404))
+  }
+
+  if (order?.orderStatus === "Shipped") {
+    return next(new ErrorHandler("You have already delivered this order", 400))
+  }
+
+  // Update product stock
+
+  order?.orderItems?.forEach(async(item) => {
+    const product = await Product.findById(item?.product?.toString());
+
+    if (!product) {
+      return next(new ErrorHandler("No products found with this ID", 404))
+    }
+
+    product.stock = product.stock - item.quantity;
+
+    await product.save();
+  })
+
+  order.orderStatus = req.body.status;
+  order.deliveredAt = new Date();
+
+  await order.save();
+
+  res.status(200).json({
+    success: true,
   })
 })
