@@ -31,7 +31,46 @@ export const newOrder = catchAsyncErrors(
     });
 
     res.status(200).json({
-        order,
-    })
+      order,
+    });
   },
 );
+
+// Get order details => /api/v1/orders/:id
+
+export const getOrderDetails = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const order = await Order.findById(req.params.id).populate("user", "name email")
+
+    if (!order) {
+      return next(new ErrorHandler("No order found with this ID", 404));
+    }
+
+    res.status(200).json({
+      order,
+    });
+  },
+);
+
+// Get current user orders => /api/v1/me/orders
+
+export const myOrders = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const orders = await Order.find({ user: req.user?._id });
+
+
+    res.status(200).json({
+      orders,
+    });
+  },
+);
+
+// Get all orders - Admin => /api/v1/admin/orders
+
+export const allOrders = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const orders = await Order.find();
+
+  res.status(200).json({
+    orders,
+  })
+})
