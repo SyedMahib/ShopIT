@@ -42,7 +42,7 @@ if (err.name === "JsonWebTokenError") {
 
 //Handle wrong JWT error
 
-if (err.name === "tokenExpireError") {
+if (err.name === "TokenExpiredError") {
   const message = `JSON web token is expired, please try again.`;
   error = new ErrorHandler(message, 401);
 }
@@ -53,8 +53,7 @@ if (err.name === "tokenExpireError") {
       error: err,
       stack: err?.stack,
     });
-  }
-  if (process.env.NODE_ENV === "production") {
+  } else {
     res.status(error.statusCode).json({
       message: error.message,
     });

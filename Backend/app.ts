@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
+import orderRoutes from "./routes/orders.js";
 import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/v1", productRoutes);
 app.use("/api/v1", authRoutes);
+app.use("/api/v1", orderRoutes);
 
 
 // Using Error Middlewares

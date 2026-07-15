@@ -1,4 +1,3 @@
-import { promises } from "dns";
 import { NextFunction, Request, Response } from "express";
 
 type AsyncController = (
