@@ -41,7 +41,10 @@ export const newOrder = catchAsyncErrors(
 
 export const getOrderDetails = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const order = await Order.findById(req.params.id).populate("user", "name email")
+    const order = await Order.findById(req.params.id).populate(
+      "user",
+      "name email",
+    );
 
     if (!order) {
       return next(new ErrorHandler("No order found with this ID", 404));
@@ -59,7 +62,6 @@ export const myOrders = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const orders = await Order.find({ user: req.user?._id });
 
-
     res.status(200).json({
       orders,
     });
@@ -68,50 +70,56 @@ export const myOrders = catchAsyncErrors(
 
 // Get all orders - Admin => /api/v1/admin/orders
 
-export const allOrders = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const orders = await Order.find();
+export const allOrders = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const orders = await Order.find();
 
-  res.status(200).json({
-    orders,
-  })
-})
+    res.status(200).json({
+      orders,
+    });
+  },
+);
 
 // Upadate orders - Admin => /api/v1/admin/orders/:id
 
-export const updateOrder = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const order = await Order.findById(req.params.id);
+export const updateOrder = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const order = await Order.findById(req.params.id);
 
-  if (!order) {
-    return next(new ErrorHandler("No order found with this ID", 404))
-  }
-
-  if (order?.orderStatus === "Shipped") {
-    return next(new ErrorHandler("You have already delivered this order", 400))
-  }
-
-  // Update product stock
-
-  order?.orderItems?.forEach(async(item) => {
-    const product = await Product.findById(item?.product?.toString());
-
-    if (!product) {
-      return next(new ErrorHandler("No products found with this ID", 404))
+    if (!order) {
+      return next(new ErrorHandler("No order found with this ID", 404));
     }
 
-    product.stock = product.stock - item.quantity;
+    if (order?.orderStatus === "Shipped") {
+      return next(
+        new ErrorHandler("You have already delivered this order", 400),
+      );
+    }
 
-    await product.save();
-  })
+    // Update product stock
 
-  order.orderStatus = req.body.status;
-  order.deliveredAt = new Date();
+    order?.orderItems?.forEach(async (item) => {
+      const product = await Product.findById(item?.product?.toString());
 
-  await order.save();
+      if (!product) {
+        return next(new ErrorHandler("No products found with this ID", 404));
+      }
 
-  res.status(200).json({
-    success: true,
-  })
-})
+      product.stock = product.stock - item.quantity;
+
+      await product.save();
+    });
+
+    order.orderStatus = req.body.status;
+    order.deliveredAt = new Date();
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+    });
+  },
+);
 
 // Delete Order => /api/v1/admin/orders/:id
 
@@ -123,7 +131,7 @@ export const deleteOrder = catchAsyncErrors(
       return next(new ErrorHandler("No order found with this ID", 404));
     }
 
-    await order.deleteOne()
+    await order.deleteOne();
 
     res.status(200).json({
       success: true,
