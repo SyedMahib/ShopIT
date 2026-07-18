@@ -142,3 +142,17 @@ export const createProductReview = catchAsyncErrors(
     });
   },
 );
+
+// Get product Reviews => /api/v1/reviews
+
+export const getProductReviews = catchAsyncErrors(async(req: Request, res: Response, next: NextFunction) => {
+  const product = await Product.findById(req.query.id);
+
+  if (!product){
+    return next(new ErrorHandler("No product found with this product ID", 404))
+  }
+
+  res.status(200).json({
+    reviews: product.reviews,
+  })
+})
