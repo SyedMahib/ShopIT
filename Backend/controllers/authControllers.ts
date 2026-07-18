@@ -192,7 +192,7 @@ export const resetPassword = catchAsyncErrors(
       };
 
       const user = await User.findByIdAndUpdate(req.user?._id, newUserData, {
-        new: true,
+        returnDocument: "after",
       })
 
       res.status(200).json({
@@ -243,7 +243,7 @@ export const resetPassword = catchAsyncErrors(
       };
 
       const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
-        new: true,
+        returnDocument: "after",
       })
 
       res.status(200).json({

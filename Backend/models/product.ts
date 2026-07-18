@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 // --- Interfaces ---
 
 export interface IReview {
+  _id?: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
   rating: number;
   comment: string;
