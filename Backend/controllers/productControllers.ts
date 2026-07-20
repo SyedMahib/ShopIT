@@ -150,9 +150,7 @@ export const getProductReviews = catchAsyncErrors(
     const product = await Product.findById(req.query.id);
 
     if (!product) {
-      return next(
-        new ErrorHandler("No reviews found for this product", 404),
-      );
+      return next(new ErrorHandler("No reviews found for this product", 404));
     }
 
     res.status(200).json({
@@ -180,8 +178,7 @@ export const deleteProductReviews = catchAsyncErrors(
     const ratings =
       numOfReviews === 0
         ? 0
-        : reviews.reduce((acc, item) => item.rating + acc, 0) /
-          numOfReviews;
+        : reviews.reduce((acc, item) => item.rating + acc, 0) / numOfReviews;
 
     product = await Product.findByIdAndUpdate(
       req.query.productId,
@@ -191,7 +188,7 @@ export const deleteProductReviews = catchAsyncErrors(
 
     res.status(200).json({
       success: true,
-      product,    
+      product,
     });
   },
 );
