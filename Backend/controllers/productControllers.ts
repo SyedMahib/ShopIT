@@ -11,8 +11,11 @@ export const getProducts = catchAsyncErrors(
     const resPerPage = 4;
     const apiFilters = new APIFilters(
       Product.find(),
-      req.query as Record<string, string>,
-    ).search();
+      req.query as Record<string, any>,
+    )
+      .search()
+      .filters()
+      .sort();
 
     let products = await apiFilters.query;
     const filteredProductsCount = products.length;

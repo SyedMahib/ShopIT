@@ -2,9 +2,9 @@ import { Query } from "mongoose";
 
 class APIFilters {
   query: Query<any[], any>;
-  queryStr: Record<string, string>;
+  queryStr: Record<string, any>;
 
-  constructor(query: Query<any[], any>, queryStr: Record<string, string>) {
+  constructor(query: Query<any[], any>, queryStr: Record<string, any>) {
     this.query = query;
     this.queryStr = queryStr;
   }
@@ -26,15 +26,69 @@ class APIFilters {
   filters() {
     const queryCopy = { ...this.queryStr };
 
-    // Fields to remove from the query string
-    const fieldsToRemove = ["Keyword", "page"];
-    fieldsToRemove.forEach((el) => delete queryCopy[el]);
+    // Fields to remove from the query string (normalized to lowercase keys)
+    const fieldsToRemove = ["keyword", "page", "limit", "sort"];
+    fieldsToRemove.forEach((el) => {
+      Object.keys(queryCopy).forEach((k) => {
+        if (k.toLowerCase() === el) delete queryCopy[k];
+      });
+    });
 
-    // Advance filter for price, rating, etc.
-    let queryStr = JSON.stringify(queryCopy);
+    const normalized: Record<string, any> = {};
+    Object.entries(queryCopy).forEach(([key, value]) => {
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        normalized[key] = value;
+        return;
+      }
+
+      const bracketMatch = key.match(/(.+)\[(.+)\]$/);
+      if (bracketMatch) {
+        const parent = bracketMatch[1];
+        const child = bracketMatch[2];
+        if (!normalized[parent]) normalized[parent] = {};
+        if (typeof value === "string" && value.includes(",")) {
+          normalized[parent][child] = value.split(",").map((v) => (isNaN(Number(v)) ? v : Number(v)));
+        } else {
+          normalized[parent][child] = isNaN(Number(value as string)) ? value : Number(value as string);
+        }
+      } else {
+        if (Array.isArray(value)) {
+          normalized[key] = { $in: value };
+        } else if (typeof value === "string" && value.includes(",")) {
+          normalized[key] = { $in: value.split(",").map((v) => (isNaN(Number(v)) ? v : Number(v)))};
+        } else {
+          normalized[key] = isNaN(Number(value as string)) ? value : Number(value as string);
+        }
+      }
+    });
+
+    // Advance filter for price, rating, etc. Convert gt/gte/lt/lte to $gt etc.
+    let queryStr = JSON.stringify(normalized);
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
 
     this.query = this.query.find(JSON.parse(queryStr));
+    return this;
+  }
+
+  sort() {
+    const sortBy = String(this.queryStr.sort || "");
+    switch (sortBy) {
+      case "priceAsc":
+        this.query = this.query.sort("price");
+        break;
+      case "priceDesc":
+        this.query = this.query.sort("-price");
+        break;
+      case "ratings":
+        this.query = this.query.sort("-ratings");
+        break;
+      case "latest":
+        this.query = this.query.sort("-createdAt");
+        break;
+      default:
+        this.query = this.query.sort("-createdAt");
+        break;
+    }
     return this;
   }
 

@@ -26,7 +26,7 @@ function ProductCard({
 }: ProductCardProps) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg">
-      <img src={imageUrl} alt={name} className="h-48 w-full object-cover" />
+      <img src={imageUrl} alt={name} className="h-48 w-full object-contain" />
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <Star className="h-3.5 w-3.5 fill-blue-600 text-blue-600" />

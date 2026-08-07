@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { ArrowRight, Mail, ShoppingCart } from "lucide-react";
-import ProductGrid from "../components/ProductGrid";
-import type { Product } from "../components/ProductGrid";
+import Products from "../components/Products";
 
 const brands = ["ASUS", "MSI", "Intel", "NVIDIA", "Corsair", "Logitech"];
 
@@ -19,32 +17,6 @@ function CountdownTimer() {
 }
 
 const HomePage = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/v1/products");
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Unable to load products");
-        }
-
-        setProducts(data.products || []);
-      } catch (fetchError: any) {
-        setError(fetchError.message || "Failed to load products");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
   return (
     <div>
       <section className="relative overflow-hidden bg-slate-900 text-white">
@@ -133,7 +105,7 @@ const HomePage = () => {
               View all <ArrowRight className="h-4 w-4" />
             </a>
           </div>
-          <ProductGrid products={products} loading={loading} error={error} />
+          <Products perPage={4} title="Best Sellers" />
         </div>
       </section>
 
