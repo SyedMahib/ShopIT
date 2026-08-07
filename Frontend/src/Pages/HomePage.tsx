@@ -1,4 +1,7 @@
-import { ArrowRight, Heart, Mail, ShoppingCart, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Mail, ShoppingCart } from "lucide-react";
+import ProductGrid from "../components/ProductGrid";
+import type { Product } from "../components/ProductGrid";
 
 const brands = ["ASUS", "MSI", "Intel", "NVIDIA", "Corsair", "Logitech"];
 
@@ -11,52 +14,37 @@ const categories = [
   { name: "Deals", icon: ShoppingCart },
 ];
 
-const bestSellers = [
-  {
-    id: 1,
-    name: "Aero Pro Laptop",
-    price: 1299,
-    oldPrice: 1499,
-    rating: 4.8,
-    reviews: 182,
-    badge: "Best Seller",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: 2,
-    name: "Nova Gaming Mouse",
-    price: 89,
-    rating: 4.7,
-    reviews: 94,
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: 3,
-    name: "Thunder Keyboard",
-    price: 129,
-    oldPrice: 159,
-    rating: 4.9,
-    reviews: 67,
-    badge: "Hot",
-    image: "https://images.unsplash.com/photo-1518444065439-e933c06ce9cd?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: 4,
-    name: "Pulse Headset",
-    price: 199,
-    rating: 4.6,
-    reviews: 54,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80",
-  },
-];
-
-const formatPrice = (price: number) => `$${price.toFixed(0)}`;
-
 function CountdownTimer() {
   return <div className="rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm">Ends in 03:14:22</div>;
 }
 
 const HomePage = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/v1/products");
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to load products");
+        }
+
+        setProducts(data.products || []);
+      } catch (fetchError: any) {
+        setError(fetchError.message || "Failed to load products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   return (
     <div>
       <section className="relative overflow-hidden bg-slate-900 text-white">
@@ -145,38 +133,7 @@ const HomePage = () => {
               View all <ArrowRight className="h-4 w-4" />
             </a>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-            {bestSellers.map((product) => (
-              <div key={product.id} className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg">
-                {product.badge && (
-                  <span className="absolute left-3 top-3 z-10 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                    {product.badge}
-                  </span>
-                )}
-                <button aria-label="Add to wishlist" className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-slate-500 backdrop-blur-sm">
-                  <Heart className="h-4 w-4" />
-                </button>
-                <img src={product.image} alt={product.name} className="h-48 w-full object-cover" />
-                <div className="flex flex-1 flex-col p-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-blue-600 text-blue-600" />
-                    <span className="text-xs font-medium text-slate-700">{product.rating}</span>
-                    <span className="text-xs text-slate-500">({product.reviews})</span>
-                  </div>
-                  <h3 className="mt-2 text-sm font-semibold text-slate-900">{product.name}</h3>
-                  <div className="mt-auto flex items-center justify-between pt-4">
-                    <div className="flex flex-col">
-                      <span className="text-base font-bold text-slate-900">{formatPrice(product.price)}</span>
-                      {product.oldPrice && <span className="text-xs text-slate-500 line-through">{formatPrice(product.oldPrice)}</span>}
-                    </div>
-                    <button aria-label="Add to cart" className="grid h-9 w-9 place-items-center rounded-md bg-blue-600 text-white">
-                      <ShoppingCart className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ProductGrid products={products} loading={loading} error={error} />
         </div>
       </section>
 
@@ -220,7 +177,7 @@ const HomePage = () => {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:gap-6">
             <div className="group relative overflow-hidden rounded-2xl">
               <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80" alt="Studio Pro creative workstation setup" className="h-80 w-full object-cover" />
-              <div className="absolute inset-0 `bg-gradient-to-t` from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 p-5 sm:p-7">
                 <span className="rounded bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">New</span>
                 <h3 className="mt-2 text-xl font-bold text-white sm:text-2xl">Studio Pro Workstations</h3>
@@ -232,7 +189,7 @@ const HomePage = () => {
             </div>
             <div className="group relative overflow-hidden rounded-2xl">
               <img src="https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80" alt="Mesh WiFi and connectivity devices" className="h-80 w-full object-cover" />
-              <div className="absolute inset-0 `bg-gradient-to-t` from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 p-5 sm:p-7">
                 <span className="rounded bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">New</span>
                 <h3 className="mt-2 text-xl font-bold text-white sm:text-2xl">Mesh Core Connectivity</h3>
