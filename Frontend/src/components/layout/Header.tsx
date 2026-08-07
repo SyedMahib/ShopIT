@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, Search, ShoppingCart, User, X } from "lucide-react";
-import logoSrc from "../../assets/shopit_logo.png";
+// import logoSrc from "../../assets/shopit_logo.png";
 
 const navItems = [
   { label: "Home", to: "/" },
@@ -25,7 +25,7 @@ export function Header() {
     <header className={`sticky top-0 z-50 w-full border-b transition-colors duration-300 ${scrolled ? "border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur" : "border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur"}`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logoSrc} alt="ShopIT logo" className="h-10 w-auto" />
+          {/* <img src={logoSrc} alt="ShopIT logo" className="h-10 w-auto" /> */}
           <span className="text-lg font-bold tracking-tight">ShopIT</span>
         </Link>
 
