@@ -107,7 +107,13 @@ const ShopPage = () => {
             </div>
           ) : null}
 
-          <ProductGrid products={products} loading={isLoading || isFetching} error={(error as any)?.data?.message || null} />
+          <ProductGrid
+            products={products}
+            loading={isLoading && !data}
+            refreshing={isFetching && Boolean(data)}
+            skeletonCount={perPage}
+            error={(error as any)?.data?.message || (error as any)?.error || null}
+          />
 
           <div className="mt-6">
             <Pagination current={page} total={totalPages} onChange={(p) => setPage(p)} />

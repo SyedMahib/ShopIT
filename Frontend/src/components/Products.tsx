@@ -22,7 +22,13 @@ const Products = ({ params, perPage = 4, title }: ProductsProps) => {
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         </div>
       )}
-      <ProductGrid products={products} loading={isLoading || isFetching} error={errMsg} />
+      <ProductGrid
+        products={products}
+        loading={isLoading && !data}
+        refreshing={isFetching && Boolean(data)}
+        skeletonCount={perPage}
+        error={errMsg}
+      />
     </div>
   );
 };

@@ -74,19 +74,19 @@ class APIFilters {
     const sortBy = String(this.queryStr.sort || "");
     switch (sortBy) {
       case "priceAsc":
-        this.query = this.query.sort("price");
+        this.query = this.query.sort("price _id");
         break;
       case "priceDesc":
-        this.query = this.query.sort("-price");
+        this.query = this.query.sort("-price -_id");
         break;
       case "ratings":
-        this.query = this.query.sort("-ratings");
+        this.query = this.query.sort("-ratings -_id");
         break;
       case "latest":
-        this.query = this.query.sort("-createdAt");
+        this.query = this.query.sort("-createdAt -_id");
         break;
       default:
-        this.query = this.query.sort("-createdAt");
+        this.query = this.query.sort("-createdAt -_id");
         break;
     }
     return this;

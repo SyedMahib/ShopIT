@@ -8,7 +8,13 @@ import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 // Get all products => GET /api/v1/products
 export const getProducts = catchAsyncErrors(
   async (req: Request, res: Response): Promise<void> => {
-    const resPerPage = 4;
+    const requestedPageSize = Number(req.query.limit);
+    // The client uses this value to calculate pagination, so the API must
+    // paginate with the same value. Keep a safe default and upper bound.
+    const resPerPage =
+      Number.isInteger(requestedPageSize) && requestedPageSize > 0
+        ? Math.min(requestedPageSize, 50)
+        : 4;
     const apiFilters = new APIFilters(
       Product.find(),
       req.query as Record<string, any>,

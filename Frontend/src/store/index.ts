@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import { productsApi } from "./productsApi";
 
 export const store = configureStore({
@@ -11,3 +12,6 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Enables the focus and reconnect refetch policies configured on productsApi.
+setupListeners(store.dispatch);
