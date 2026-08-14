@@ -39,9 +39,10 @@ const ShopPage = () => {
       <div className="grid gap-8 lg:grid-cols-4">
         <div className="hidden lg:block lg:col-span-1">
           <SidebarFilters
-            initial={{}}
+            key={JSON.stringify(filters)}
+            initial={filters}
             onApply={(f) => {
-              setFilters(f as any);
+              setFilters((current) => ({ ...current, ...f }));
               setPage(1);
             }}
             onReset={() => {
@@ -97,9 +98,9 @@ const ShopPage = () => {
                 <div className="pt-10">
                   <h2 className="mb-4 text-xl font-semibold">Filters</h2>
                   <SidebarFilters
-                    initial={{}}
+                    initial={filters}
                     onApply={(f) => {
-                      setFilters(f as any);
+                      setFilters((current) => ({ ...current, ...f }));
                       setPage(1);
                       setShowMobileFilters(false);
                     }}
