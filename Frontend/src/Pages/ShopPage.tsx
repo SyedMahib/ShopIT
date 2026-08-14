@@ -7,7 +7,7 @@ import Pagination from "../components/Pagination";
 import { useGetProductsQuery } from "../store/productsApi";
 
 const ShopPage = () => {
-  const { keyword } = useSearch({ from: "/shop" });
+  const { keyword, category } = useSearch({ from: "/shop" });
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [page, setPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -20,6 +20,7 @@ const ShopPage = () => {
   const queryArg = useMemo(() => {
     const q: Record<string, any> = { page, limit: perPage };
     if (keyword) q.keyword = keyword;
+    if (category) q.category = category;
     if (filters.minPrice) q["price[gte]"] = filters.minPrice;
     if (filters.maxPrice) q["price[lte]"] = filters.maxPrice;
     if (filters.categories && filters.categories.length) q.category = filters.categories.join(",");
@@ -27,7 +28,7 @@ const ShopPage = () => {
     if (filters.rating) q["ratings[gte]"] = filters.rating;
     if (filters.sort) q.sort = filters.sort;
     return q;
-  }, [filters, keyword, page]);
+  }, [category, filters, keyword, page]);
 
   const { data, isLoading, error, isFetching } = useGetProductsQuery(queryArg);
   const products = data?.products || [];
@@ -55,8 +56,8 @@ const ShopPage = () => {
         <div className="lg:col-span-3">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold">{keyword ? `Results for “${keyword}”` : "Shop Products"}</h1>
-              <p className="text-sm text-slate-500">{keyword ? "Browse matching products or refine your search with filters." : "Browse products by category, seller, price, and rating."}</p>
+              <h1 className="text-2xl font-bold">{keyword ? `Results for “${keyword}”` : category ? `${category} products` : "Shop Products"}</h1>
+              <p className="text-sm text-slate-500">{keyword || category ? "Browse matching products or refine your search with filters." : "Browse products by category, seller, price, and rating."}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button

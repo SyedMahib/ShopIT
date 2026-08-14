@@ -19,9 +19,10 @@ const indexRoute = createRoute({
 const shopRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/shop",
-  validateSearch: (search: Record<string, unknown>): { keyword?: string } => {
+  validateSearch: (search: Record<string, unknown>): { keyword?: string; category?: string } => {
     const keyword = typeof search.keyword === "string" ? search.keyword : undefined;
-    return keyword ? { keyword } : {};
+    const category = typeof search.category === "string" ? search.category : undefined;
+    return { ...(keyword ? { keyword } : {}), ...(category ? { category } : {}) };
   },
   component: ShopPage,
 });
