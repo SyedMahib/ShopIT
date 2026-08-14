@@ -1,4 +1,5 @@
 import { ShoppingCart, Star } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export interface ProductCardProps {
   id: string;
@@ -16,6 +17,7 @@ function formatPrice(price: number) {
 }
 
 function ProductCard({
+  id,
   name,
   price,
   ratings,
@@ -34,7 +36,13 @@ function ProductCard({
           <span>({NumOfReviews})</span>
           <span className="truncate">{category}</span>
         </div>
-        <h3 className="mt-3 text-sm font-semibold text-slate-900">{name}</h3>
+        <Link
+          to="/products/$productId"
+          params={{ productId: id }}
+          className="mt-3 text-sm font-semibold text-slate-900 transition-colors hover:text-blue-600"
+        >
+          {name}
+        </Link>
         <p className="mt-2 line-clamp-2 text-sm text-slate-500">{description || "Quality product for your next build."}</p>
         <div className="mt-auto flex items-center justify-between pt-4">
           <span className="text-base font-bold text-slate-900">{formatPrice(price)}</span>

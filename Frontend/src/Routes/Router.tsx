@@ -4,6 +4,7 @@ import AboutPage from "../Pages/AboutPage";
 import ContactPage from "../Pages/ContactPage";
 import HomePage from "../Pages/HomePage";
 import ShopPage from "../Pages/ShopPage";
+import ProductDetailsPage from "../Pages/ProductDetailsPage";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -18,7 +19,17 @@ const indexRoute = createRoute({
 const shopRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/shop",
+  validateSearch: (search: Record<string, unknown>): { keyword?: string } => {
+    const keyword = typeof search.keyword === "string" ? search.keyword : undefined;
+    return keyword ? { keyword } : {};
+  },
   component: ShopPage,
+});
+
+const productDetailsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/products/$productId",
+  component: ProductDetailsPage,
 });
 
 const aboutRoute = createRoute({
@@ -33,7 +44,7 @@ const contactRoute = createRoute({
   component: ContactPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, shopRoute, aboutRoute, contactRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, shopRoute, productDetailsRoute, aboutRoute, contactRoute]);
 
 export const router = createRouter({ routeTree });
 
