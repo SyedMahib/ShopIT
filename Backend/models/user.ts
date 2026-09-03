@@ -7,7 +7,7 @@ import crypto from "crypto";
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   avatar?: {
     public_id: string;
     url: string;
@@ -15,6 +15,7 @@ export interface IUser extends Document {
   role?: string;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+  googleAuthId?: string;
   createdAt?: Date;
   updatedAt?: Date;
   getJwtToken(): string;
@@ -38,9 +39,12 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Please enter your password"],
       minLength: [6, "Your password must be longer than 6 characters"],
       select: false,
+    },
+    googleAuthId: {
+      type: String,
+      sparse: true,
     },
     avatar: {
       public_id: String,
@@ -58,7 +62,7 @@ const userSchema = new Schema<IUser>(
 
 // Encrypting Password before saving user
 userSchema.pre<IUser>("save", async function () {
-  if (!this.isModified("password")) {
+  if (!this.password || !this.isModified("password")) {
     return;
   }
 

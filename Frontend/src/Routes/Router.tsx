@@ -5,6 +5,9 @@ import ContactPage from "../Pages/ContactPage";
 import HomePage from "../Pages/HomePage";
 import ShopPage from "../Pages/ShopPage";
 import ProductDetailsPage from "../Pages/ProductDetailsPage";
+import AuthLayout from "../Layouts/AuthLayouts";
+import LoginPage from "../Pages/Auth/LoginPage";
+import RegisterPage from "../Pages/Auth/RegisterPage";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -45,7 +48,33 @@ const contactRoute = createRoute({
   component: ContactPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, shopRoute, productDetailsRoute, aboutRoute, contactRoute]);
+// Auth routes
+const authRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "auth",
+  component: AuthLayout,
+});
+
+const loginRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: "/register",
+  component: RegisterPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  shopRoute,
+  productDetailsRoute,
+  aboutRoute,
+  contactRoute,
+  authRoute.addChildren([loginRoute, registerRoute]),
+]);
 
 export const router = createRouter({ routeTree });
 

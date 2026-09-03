@@ -28,7 +28,7 @@ export const newOrder = catchAsyncErrors(
       totalAmount,
       paymentMethod,
       paymentInfo,
-      user: req.user?._id,
+      user: (req.user as any)?._id,
     });
 
     res.status(200).json({
@@ -60,7 +60,7 @@ export const getOrderDetails = catchAsyncErrors(
 
 export const myOrders = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const orders = await Order.find({ user: req.user?._id });
+    const orders = await Order.find({ user: (req.user as any)?._id });
 
     res.status(200).json({
       orders,

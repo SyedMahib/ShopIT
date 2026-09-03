@@ -16,7 +16,7 @@
   "main": "dist/app.js",
   "scripts": {
     "start": "node dist/app.js",
-    "dev": "tsx watch Backend/app.ts",
+    "dev": "tsx watch --import ./Backend/preload.ts Backend/app.ts",
     "build": "tsc",
     "prod": "NODE_ENV=production node dist/app.js",
     "seeder": "tsx Backend/seeder/seeder.ts"
@@ -26,18 +26,24 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.28.0",
     "mongoose": "^9.7.0",
-    "nodemailer": "^9.0.3"
+    "nodemailer": "^9.0.3",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.21",
     "@types/nodemailer": "^8.0.1",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
     "nodemon": "^3.1.14",
     "tsx": "^4.22.4",
     "typescript": "^5.7.0"

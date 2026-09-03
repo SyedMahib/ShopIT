@@ -7,6 +7,37 @@ import { getResetPasswordTemplate } from "../utils/emailTemplates.js";
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 
+// Google Login Controller
+export const googleLogin = (req: Request, res: Response, next: NextFunction) => {
+  // Passport handles the authentication via redirect
+  next();
+};
+
+// Google Auth Callback Controller
+export const googleAuthCallback = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const user = req.user as any;
+
+    if (!user) {
+      return next(new ErrorHandler("User not found", 404));
+    }
+
+    // Set JWT cookie manually so we can redirect after
+    const token = user.getJwtToken();
+    const options = {
+      expires: new Date(
+        Date.now() +
+          Number(process.env.JWT_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+    };
+    res.cookie("token", token, options);
+
+    // Redirect to frontend — the app will fetch /api/v1/me on mount
+    res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+  }
+);
+
 // Register a User => /api/v1/register
 export const registerUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -142,7 +173,7 @@ export const resetPassword = catchAsyncErrors(
 
   export const getUserProfile = catchAsyncErrors(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const user = await User.findById(req?.user?._id);
+      const user = await User.findById((req.user as any)?._id);
 
       res.status(200).json({
         user,
@@ -154,7 +185,7 @@ export const resetPassword = catchAsyncErrors(
 
   export const updatePassword = catchAsyncErrors(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const user = await User.findById(req?.user?._id).select("+password");
+      const user = await User.findById((req.user as any)?._id).select("+password");
 
       if (!user) {
         return next(new ErrorHandler("User not found", 404));
@@ -191,7 +222,7 @@ export const resetPassword = catchAsyncErrors(
         email: req.body.email,
       };
 
-      const user = await User.findByIdAndUpdate(req.user?._id, newUserData, {
+      const user = await User.findByIdAndUpdate((req.user as any)?._id, newUserData, {
         returnDocument: "after",
       })
 

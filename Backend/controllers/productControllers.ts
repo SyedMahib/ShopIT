@@ -40,7 +40,7 @@ export const getProducts = catchAsyncErrors(
 // Create new product => POST /api/v1/admin/products
 export const newProduct = catchAsyncErrors(
   async (req: Request, res: Response): Promise<void> => {
-    req.body.user = req.user?._id;
+    req.body.user = (req.user as any)?._id;
 
     const product = await Product.create(req.body);
 
@@ -76,7 +76,7 @@ export const updateProduct = catchAsyncErrors(
       return;
     }
 
-    req.body.user = req.user?._id;
+    req.body.user = (req.user as any)?._id;
 
     product = await Product.findByIdAndUpdate(req.params?.id, req.body, {
       returnDocument: "after",
@@ -113,7 +113,7 @@ export const createProductReview = catchAsyncErrors(
     const { rating, comment, productId } = req.body;
 
     const review = {
-      user: req?.user?._id,
+      user: (req.user as any)?._id,
       rating: Number(rating),
       comment,
     } as IReview;
@@ -126,12 +126,12 @@ export const createProductReview = catchAsyncErrors(
     }
 
     const isReviewed = product?.reviews?.find(
-      (r) => r.user.toString() === req?.user?._id.toString(),
+      (r) => r.user.toString() === (req.user as any)?._id.toString(),
     );
 
     if (isReviewed) {
       product.reviews.forEach((review) => {
-        if (review.user.toString() === req?.user?._id.toString())
+        if (review.user.toString() === (req.user as any)?._id.toString())
           review.comment = comment;
         review.rating = rating;
       });

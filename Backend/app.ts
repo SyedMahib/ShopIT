@@ -1,20 +1,22 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config({ path: "Backend/config/config.env" });
+
+import express from "express";
+import passport from "passport";
+import session from "express-session";
 import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/orders.js";
 import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
-
+import "./config/passport.config.js";
 
 process.on("uncaughtException", (err) => {
   console.log(`Error: ${err}`);
   console.log("Shutting down the server due to Uncaught Exception");
   process.exit(1);
 })
-
-dotenv.config({ path: "Backend/config/config.env" });
 
 const app = express();
 
@@ -23,6 +25,21 @@ connectDatabase();
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Passport session support
+app.use(
+  session({
+    secret: process.env.JWT_SECRET || "secretkey",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 // Routes

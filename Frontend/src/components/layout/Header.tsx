@@ -1,9 +1,12 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, Search, ShoppingCart, User, X } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, LogOut, ChevronDown, X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../../store";
+import { clearUser } from "../../store/authSlice";
+import { useLogoutMutation } from "../../store/authApi";
 import defaultProductImage from "../../assets/default_product.png";
 import { useGetProductsQuery } from "../../store/productsApi";
-// import logoSrc from "../../assets/shopit_logo.png";
 
 const navItems = [
   { label: "Home", to: "/" },
@@ -18,8 +21,14 @@ export function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchRef = useRef<HTMLFormElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+
   const { currentData: suggestionData, isFetching: isLoadingSuggestions } = useGetProductsQuery(
     { keyword: debouncedSearchTerm, limit: 5 },
     { skip: debouncedSearchTerm.length < 2 },
@@ -29,13 +38,26 @@ export function Header() {
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const keyword = searchTerm.trim();
-
     navigate({
       to: "/shop",
       search: { keyword: keyword || undefined },
     });
     setIsSearchFocused(false);
     setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      dispatch(clearUser());
+      setUserMenuOpen(false);
+      navigate({ to: "/" });
+    } catch {
+      // Force clear even if server request fails
+      dispatch(clearUser());
+      setUserMenuOpen(false);
+      navigate({ to: "/" });
+    }
   };
 
   useEffect(() => {
@@ -56,16 +78,24 @@ export function Header() {
         setIsSearchFocused(false);
       }
     };
-
     document.addEventListener("mousedown", closeSuggestions);
     return () => document.removeEventListener("mousedown", closeSuggestions);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <header className={`sticky top-0 z-50 w-full border-b transition-colors duration-300 ${scrolled ? "border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur" : "border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur"}`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
-          {/* <img src={logoSrc} alt="ShopIT logo" className="h-10 w-auto" /> */}
           <span className="text-lg font-bold tracking-tight">ShopIT</span>
         </Link>
 
@@ -74,7 +104,7 @@ export function Header() {
             <Link
               key={item.label}
               to={item.to}
-              className={`text-sm font-medium transition-colors ${scrolled ? "text-slate-600 hover:text-slate-900" : "text-slate-600 hover:text-slate-900"}`}
+              className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
             >
               {item.label}
             </Link>
@@ -83,7 +113,7 @@ export function Header() {
 
         <div className="ml-auto flex items-center gap-3 lg:ml-0">
           <form ref={searchRef} className="relative hidden items-center sm:flex" onSubmit={submitSearch}>
-            <Search className={`pointer-events-none absolute left-3 h-4 w-4 ${scrolled ? "text-slate-400" : "text-slate-400"}`} />
+            <Search className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400" />
             <input
               type="search"
               value={searchTerm}
@@ -92,18 +122,16 @@ export function Header() {
                 setIsSearchFocused(true);
               }}
               onFocus={() => setIsSearchFocused(true)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") setIsSearchFocused(false);
-              }}
+              onKeyDown={(event) => { if (event.key === "Escape") setIsSearchFocused(false); }}
               placeholder="Search products..."
               aria-label="Search products"
-              className={`h-9 w-44 rounded-md border pl-9 pr-10 text-sm outline-none transition-colors md:w-64 ${scrolled ? "border-slate-200 bg-white text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-300" : "border-slate-200 bg-white text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-300"}`}
+              className="h-9 w-44 rounded-md border border-slate-200 bg-white pl-9 pr-10 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:ring-2 focus:ring-slate-300 md:w-64"
             />
             <button type="submit" aria-label="Submit product search" className="absolute right-1 grid h-7 w-7 place-items-center rounded text-slate-500 transition-colors hover:bg-slate-100 hover:text-blue-600">
               <Search className="h-4 w-4" />
             </button>
             {isSearchFocused && debouncedSearchTerm.length >= 2 && (
-              <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl" role="listbox" aria-label="Product suggestions">
+              <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl" role="listbox">
                 <div className="border-b border-slate-100 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Suggested products
                 </div>
@@ -144,7 +172,7 @@ export function Header() {
                       onClick={() => setIsSearchFocused(false)}
                       className="block border-t border-slate-100 px-4 py-3 text-center text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
                     >
-                      View all results for “{debouncedSearchTerm}”
+                      View all results for "{debouncedSearchTerm}"
                     </Link>
                   </>
                 ) : (
@@ -157,22 +185,57 @@ export function Header() {
           <button
             type="button"
             aria-label="Cart"
-            className={`relative rounded-md p-2 transition-colors ${scrolled ? "text-slate-700 hover:bg-slate-100" : "text-slate-700 hover:bg-slate-100"}`}
+            className="relative rounded-md p-2 text-slate-700 transition-colors hover:bg-slate-100"
           >
             <ShoppingCart className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            aria-label="Account"
-            className={`rounded-md p-2 transition-colors ${scrolled ? "text-slate-700 hover:bg-slate-100" : "text-slate-700 hover:bg-slate-100"}`}
-          >
-            <User className="h-5 w-5" />
-          </button>
+
+          {isAuthenticated && user ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-md p-2 text-slate-700 transition-colors hover:bg-slate-100"
+                aria-label="Account menu"
+                aria-expanded={userMenuOpen}
+              >
+                <User className="h-5 w-5" />
+                <span className="hidden text-sm font-medium text-slate-700 sm:block">{user.name}</span>
+                <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+                  <div className="border-b border-slate-100 px-4 py-2">
+                    <p className="text-sm font-medium text-slate-800">{user.name}</p>
+                    <p className="text-xs text-slate-500">{user.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {isLoggingOut ? "Signing out..." : "Sign out"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-md p-2 text-slate-700 transition-colors hover:bg-slate-100"
+              aria-label="Login"
+            >
+              <User className="h-5 w-5" />
+            </Link>
+          )}
+
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen((v) => !v)}
-            className={`rounded-md p-2 transition-colors ${scrolled ? "text-slate-700 hover:bg-slate-100" : "text-slate-700 hover:bg-slate-100"} lg:hidden`}
+            className="rounded-md p-2 text-slate-700 transition-colors hover:bg-slate-100 lg:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -180,7 +243,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className={`border-t lg:hidden ${scrolled ? "border-slate-200 bg-white" : "border-white/20 bg-slate-900/95"}`}>
+        <nav className="border-t bg-white lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
             <form className="relative mb-3 sm:hidden" onSubmit={submitSearch}>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -201,11 +264,20 @@ export function Header() {
                 key={item.label}
                 to={item.to}
                 onClick={() => setOpen(false)}
-                className={`block py-2 text-sm font-medium transition-colors ${scrolled ? "text-slate-600 hover:text-slate-900" : "text-slate-200 hover:text-white"}`}
+                className="block py-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
               >
                 {item.label}
               </Link>
             ))}
+            {!isAuthenticated && (
+              <Link
+                to="/login"
+                onClick={() => setOpen(false)}
+                className="block py-2 text-sm font-medium text-blue-600 transition-colors hover:text-blue-500"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </nav>
       )}

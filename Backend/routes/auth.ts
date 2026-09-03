@@ -1,10 +1,13 @@
 import express from "express";
+import passport from "passport";
 import {
   allUsers,
   deleteUser,
   forgotPassword,
   getUserDetails,
   getUserProfile,
+  googleAuthCallback,
+  googleLogin,
   loginUser,
   logOutUser,
   registerUser,
@@ -20,6 +23,13 @@ const router = express.Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/logout").get(logOutUser);
+
+// Google OAuth routes
+router.route("/auth/google").get(googleLogin, passport.authenticate("google", { scope: ["profile", "email"] }));
+router.route("/auth/google/callback").get(
+  passport.authenticate("google", { failureRedirect: `${process.env.FRONTEND_URL}/login` }),
+  googleAuthCallback
+);
 
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/reset/:token").put(resetPassword);
