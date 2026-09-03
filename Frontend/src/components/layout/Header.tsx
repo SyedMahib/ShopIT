@@ -199,15 +199,34 @@ export function Header() {
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
               >
-                <User className="h-5 w-5" />
+                {user.avatar?.url ? (
+                  <img
+                    src={`/api/avatar/${user._id}`}
+                    alt={user.name}
+                    className="h-7 w-7 rounded-full object-cover ring-2 ring-slate-200"
+                  />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 ring-2 ring-slate-200">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <span className="hidden text-sm font-medium text-slate-700 sm:block">{user.name}</span>
                 <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
-                  <div className="border-b border-slate-100 px-4 py-2">
-                    <p className="text-sm font-medium text-slate-800">{user.name}</p>
-                    <p className="text-xs text-slate-500">{user.email}</p>
+                <div className="absolute right-0 top-full z-50 mt-2 w-70 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+                  <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5">
+                    {user.avatar?.url ? (
+                      <img src={`/api/avatar/${user._id}`} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 ring-2 ring-slate-200">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{user.name}</p>
+                      <p className="text-xs text-slate-500">{user.email}</p>
+                    </div>
                   </div>
                   <button
                     type="button"
