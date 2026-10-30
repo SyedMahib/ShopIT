@@ -96,10 +96,10 @@ export default function OrderDetailsPage() {
         </Link>
       ) : (
         <Link
-          to="/dashboard"
+          to="/dashboard/orders"
           className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-blue-600"
         >
-          <ChevronLeft className="h-4 w-4" /> Back to dashboard
+          <ChevronLeft className="h-4 w-4" /> Back to my orders
         </Link>
       )}
 

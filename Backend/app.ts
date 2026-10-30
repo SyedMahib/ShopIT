@@ -9,6 +9,7 @@ import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/orders.js";
 import wishlistRoutes from "./routes/wishlist.js";
+import contactRoutes from "./routes/contact.js";
 import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import "./config/passport.config.js";
@@ -54,6 +55,7 @@ app.use("/api/v1", productRoutes);
 app.use("/api/v1", authRoutes);
 app.use("/api/v1", orderRoutes);
 app.use("/api/v1", wishlistRoutes);
+app.use("/api/v1", contactRoutes);
 
 // Proxy Google avatars (Google blocks direct cross-origin requests)
 app.get("/api/avatar/:id", async (req, res) => {

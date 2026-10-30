@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
 import RootLayout from "../Layouts/RootLayouts";
 import AboutPage from "../Pages/AboutPage";
 import ContactPage from "../Pages/ContactPage";
@@ -19,12 +19,15 @@ import CartPage from "../Pages/CartPage";
 import ShippingPage from "../Pages/ShippingPage";
 import ConfirmOrderPage from "../Pages/ConfirmOrderPage";
 import OrderDetailsPage from "../Pages/OrderDetailsPage";
+import MyOrdersPage from "../Pages/MyOrdersPage";
 import AdminGuard from "../components/guards/AdminGuard";
-import AdminDashboardPage from "../Pages/admin/AdminDashboardPage";
-import AdminOrdersPage from "../Pages/admin/AdminOrdersPage";
-import AdminProductsPage from "../Pages/admin/AdminProductsPage";
-import ProductFormPage from "../Pages/admin/ProductFormPage";
-import AdminUsersPage from "../Pages/admin/AdminUsersPage";
+
+// Admin pages are loaded on demand so regular shoppers never download them
+const AdminDashboardPage = lazyRouteComponent(() => import("../Pages/admin/AdminDashboardPage"));
+const AdminOrdersPage = lazyRouteComponent(() => import("../Pages/admin/AdminOrdersPage"));
+const AdminProductsPage = lazyRouteComponent(() => import("../Pages/admin/AdminProductsPage"));
+const ProductFormPage = lazyRouteComponent(() => import("../Pages/admin/ProductFormPage"));
+const AdminUsersPage = lazyRouteComponent(() => import("../Pages/admin/AdminUsersPage"));
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -145,6 +148,12 @@ const confirmOrderRoute = createRoute({
   component: ConfirmOrderPage,
 });
 
+const myOrdersRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard/orders",
+  component: MyOrdersPage,
+});
+
 const orderDetailsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: "/dashboard/orders/$orderId",
@@ -211,6 +220,7 @@ const routeTree = rootRoute.addChildren([
     wishlistRoute,
     shippingRoute,
     confirmOrderRoute,
+    myOrdersRoute,
     orderDetailsRoute,
     adminRoute.addChildren([
       adminDashboardRoute,

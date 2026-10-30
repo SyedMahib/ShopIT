@@ -1,20 +1,32 @@
+import { useState } from "react";
 import { useUpdatePasswordMutation } from "../store/authApi";
 
 export default function SettingsPage() {
-  const [updatePassword, { isLoading, error }] = useUpdatePasswordMutation();
+  const [updatePassword, { isLoading }] = useUpdatePasswordMutation();
+  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    // Keep a reference: React clears e.currentTarget once we await
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     const oldPassword = formData.get("oldPassword") as string;
     const newPassword = formData.get("newPassword") as string;
-    
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (newPassword !== confirmPassword) {
+      setStatus({ type: "error", text: "New passwords do not match." });
+      return;
+    }
+
+    setStatus(null);
     try {
       await updatePassword({ oldPassword, newPassword }).unwrap();
-      alert("Password updated successfully!");
-      e.currentTarget.reset();
+      form.reset();
+      setStatus({ type: "success", text: "Password updated successfully." });
     } catch (err) {
-      // Error is handled by RTK Query
+      const message = (err as { data?: { message?: string } })?.data?.message;
+      setStatus({ type: "error", text: message || "Failed to update password. Please try again." });
     }
   };
 
@@ -60,9 +72,13 @@ export default function SettingsPage() {
           />
         </div>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-            {error instanceof Error ? error.message : "Failed to update password. Please check your current password."}
+        {status && (
+          <div
+            className={`rounded-lg p-4 text-sm ${
+              status.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+            }`}
+          >
+            {status.text}
           </div>
         )}
 

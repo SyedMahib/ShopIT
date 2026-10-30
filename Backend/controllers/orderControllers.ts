@@ -4,6 +4,7 @@ import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import Order, { IOrder, OrderStatus } from "../models/order.js";
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
+import { sendOrderEmail } from "../utils/orderEmails.js";
 
 // Which status an order may move to from its current status
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
@@ -106,6 +107,8 @@ export const newOrder = catchAsyncErrors(
       throw error;
     }
 
+    sendOrderEmail(order, req.user as any, "Placed");
+
     res.status(200).json({
       order,
     });
@@ -170,6 +173,8 @@ export const cancelMyOrder = catchAsyncErrors(
     await order.save();
     await restoreStock(order);
 
+    sendOrderEmail(order, req.user as any, "Cancelled");
+
     res.status(200).json({
       order,
     });
@@ -192,7 +197,7 @@ export const allOrders = catchAsyncErrors(
 
 export const updateOrder = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).populate("user", "name email");
 
     if (!order) {
       return next(new ErrorHandler("No order found with this ID", 404));
@@ -211,6 +216,9 @@ export const updateOrder = catchAsyncErrors(
     await order.save();
 
     if (status === "Cancelled") await restoreStock(order);
+
+    // "Processing" is never a target status, so every change here is worth an email
+    sendOrderEmail(order, order.user as any, status as "Shipped" | "Delivered" | "Cancelled");
 
     res.status(200).json({
       order,

@@ -36,6 +36,7 @@ function ProductCard({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [justAdded, setJustAdded] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
   const isInStock = stock > 0;
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [addToWishlist] = useAddToWishlistMutation();
@@ -49,7 +50,14 @@ function ProductCard({
       return;
     }
     
-    await addToWishlist({ productId: id }).unwrap();
+    try {
+      await addToWishlist({ productId: id }).unwrap();
+      setWishlisted(true);
+    } catch (err) {
+      // Already saved counts as success
+      const message = (err as { data?: { message?: string } })?.data?.message ?? "";
+      if (message.includes("already")) setWishlisted(true);
+    }
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -83,11 +91,14 @@ function ProductCard({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              aria-label={`Add ${name} to wishlist`}
+              aria-label={wishlisted ? `${name} is in your wishlist` : `Add ${name} to wishlist`}
+              aria-pressed={wishlisted}
               onClick={handleWishlistClick}
-              className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 text-slate-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+              className={`grid h-9 w-9 place-items-center rounded-md border transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500 ${
+                wishlisted ? "border-red-200 bg-red-50 text-red-500" : "border-slate-200 text-slate-400"
+              }`}
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${wishlisted ? "fill-current" : ""}`} />
             </button>
             <button
               type="button"

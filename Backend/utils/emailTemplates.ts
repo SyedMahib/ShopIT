@@ -479,3 +479,106 @@ export const getResetPasswordTemplate = (
 </html>
   `
 }
+
+// ---------- Order status emails ----------
+
+// Names and addresses come from users, so escape them before putting them in HTML
+const escapeHtml = (value: unknown): string =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const money = (amount: number) => `$${Number(amount).toFixed(2)}`;
+
+interface OrderEmailItem {
+  name: string;
+  quantity: number;
+  price: string | number;
+}
+
+interface OrderEmailData {
+  orderId: string;
+  items: OrderEmailItem[];
+  itemsPrice: number;
+  shippingAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  shippingAddress: string;
+}
+
+export const getOrderStatusTemplate = (
+  userName: string,
+  heading: string,
+  intro: string,
+  order: OrderEmailData,
+  orderUrl: string,
+): string => {
+  const rows = order.items
+    .map(
+      (item) => `
+        <tr>
+          <td style="padding:8px 0;color:#334155;font-size:14px;">${escapeHtml(item.name)} &times; ${item.quantity}</td>
+          <td style="padding:8px 0;color:#334155;font-size:14px;text-align:right;white-space:nowrap;">${money(Number(item.price) * item.quantity)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const totalRow = (label: string, value: string, bold = false) => `
+        <tr>
+          <td style="padding:4px 0;color:${bold ? "#0f172a" : "#64748b"};font-size:14px;${bold ? "font-weight:700;" : ""}">${label}</td>
+          <td style="padding:4px 0;color:${bold ? "#0f172a" : "#334155"};font-size:14px;text-align:right;${bold ? "font-weight:700;" : ""}">${value}</td>
+        </tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(heading)}</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f0f2f5;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f2f5;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:24px 32px;color:#ffffff;font-size:20px;font-weight:800;">ShopIT</td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 8px;color:#0f172a;font-size:22px;">${escapeHtml(heading)}</h1>
+                <p style="margin:0 0 4px;color:#475569;font-size:15px;">Hi ${escapeHtml(userName)},</p>
+                <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">${escapeHtml(intro)}</p>
+
+                <p style="margin:0 0 8px;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Order #${escapeHtml(order.orderId.slice(-6).toUpperCase())}</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                  ${rows}
+                </table>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+                  ${totalRow("Subtotal", money(order.itemsPrice))}
+                  ${totalRow("Shipping", order.shippingAmount === 0 ? "Free" : money(order.shippingAmount))}
+                  ${totalRow("Tax", money(order.taxAmount))}
+                  ${totalRow("Total", money(order.totalAmount), true)}
+                </table>
+
+                <p style="margin:24px 0 4px;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Shipping to</p>
+                <p style="margin:0 0 28px;color:#334155;font-size:14px;">${escapeHtml(order.shippingAddress)}</p>
+
+                <a href="${escapeHtml(orderUrl)}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px;border-radius:10px;">View your order</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;background:#f8fafc;color:#94a3b8;font-size:12px;line-height:1.6;">
+                Questions about your order? Reply to this email or <a href="mailto:support@shopit.com" style="color:#7c3aed;">contact support</a>.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+};

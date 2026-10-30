@@ -4,6 +4,7 @@ interface SendEmailOptions {
   email: string
   subject: string
   message: string
+  replyTo?: string
 }
 
 const sendEmail = async (options: SendEmailOptions): Promise<void> => {
@@ -21,6 +22,7 @@ const sendEmail = async (options: SendEmailOptions): Promise<void> => {
     to: options.email,
     subject: options.subject,
     html: options.message,
+    replyTo: options.replyTo,
   }
 
   await transport.sendMail(message)

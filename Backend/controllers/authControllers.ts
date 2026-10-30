@@ -197,20 +197,27 @@ export const resetPassword = catchAsyncErrors(
         return next(new ErrorHandler("User not found", 404));
       }
 
+      // Accounts created with Google sign-in have no password yet
+      if (!user.password) {
+        return next(new ErrorHandler("Your account uses Google sign-in. Use 'Forgot password' on the login page to set a password.", 400));
+      }
+
       // check the previous password
-      const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+      const isPasswordMatched = await user.comparePassword(String(req.body.oldPassword ?? ""));
 
       if(!isPasswordMatched) {
         return next(new ErrorHandler("Old password is incorrect", 400));
       }
 
+      const newPassword = String(req.body.newPassword ?? "");
+
       // Validate password length before saving
-      if (req.body.password.length < 6) {
+      if (newPassword.length < 6) {
         return next(new ErrorHandler("Password must be at least 6 characters long", 400));
       }
 
-      user.password = req.body.password;
-      await user.save();
+      user.password = newPassword;
+      await user.save({ validateModifiedOnly: true });
 
       res.status(200).json({
         success: true,

@@ -1,28 +1,41 @@
-import { useSelector } from "react-redux";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Heart, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
 import { useGetWishlistQuery, useRemoveFromWishlistMutation } from "../store/productsApi";
-import type { RootState } from "../store";
 
 export default function WishlistPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { data, isLoading, isError } = useGetWishlistQuery(undefined, {
-    skip: !isAuthenticated,
-  });
+  // Rendered inside AuthGuard, so the user is logged in
+  const { data, isLoading, isError, refetch } = useGetWishlistQuery();
   const [removeFromWishlist, { isLoading: isRemoving }] = useRemoveFromWishlistMutation();
-
-  if (isError) {
-    navigate({ to: "/login" });
-    return null;
-  }
+  const [removeError, setRemoveError] = useState("");
 
   const wishlist = data?.wishlist;
   const products = wishlist?.products ?? [];
 
   const handleRemove = async (productId: string) => {
-    await removeFromWishlist(productId).unwrap();
+    setRemoveError("");
+    try {
+      await removeFromWishlist(productId).unwrap();
+    } catch {
+      setRemoveError("Could not remove the item. Please try again.");
+    }
   };
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <p className="text-slate-600">We couldn&apos;t load your wishlist.</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="mt-4 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -47,6 +60,8 @@ export default function WishlistPage() {
           </p>
         </div>
       </div>
+
+      {removeError && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{removeError}</div>}
 
       {products.length === 0 ? (
         <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 py-16 text-center">
