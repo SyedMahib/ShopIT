@@ -237,7 +237,7 @@ export const resetPassword = catchAsyncErrors(
   export const allUsers = catchAsyncErrors(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
      
-      const users = await User.find();
+      const users = await User.find().sort({ createdAt: -1 });
 
       res.status(200).json({
         users,
@@ -267,15 +267,27 @@ export const resetPassword = catchAsyncErrors(
   export const updateUser = catchAsyncErrors(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
      
-      const newUserData = {
-        name: req.body.name,
-        email: req.body.email,
-        role: req.body.role,
-      };
+      const newUserData: { name?: string; email?: string; role?: string } = {};
+      if (req.body.name !== undefined) newUserData.name = req.body.name;
+      if (req.body.email !== undefined) newUserData.email = req.body.email;
+      if (req.body.role !== undefined) {
+        if (!["user", "admin"].includes(req.body.role)) {
+          return next(new ErrorHandler("Role must be user or admin", 400))
+        }
+        if (req.params.id === String((req.user as any)?._id) && req.body.role !== "admin") {
+          return next(new ErrorHandler("You can't remove your own admin role", 400))
+        }
+        newUserData.role = req.body.role;
+      }
 
       const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
         returnDocument: "after",
+        runValidators: true,
       })
+
+      if(!user){
+        return next(new ErrorHandler(`User not found with the id: ${req.params.id}`, 404))
+      }
 
       res.status(200).json({
         user
@@ -293,6 +305,10 @@ export const resetPassword = catchAsyncErrors(
 
       if(!user){
         return next(new ErrorHandler(`User not found with the id: ${req.params.id}`, 404))
+      }
+
+      if (String(user._id) === String((req.user as any)?._id)) {
+        return next(new ErrorHandler("You can't delete your own account", 400))
       }
 
       // TODO - Remove User Avatar From Cloudinary

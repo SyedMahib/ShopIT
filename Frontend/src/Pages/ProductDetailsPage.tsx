@@ -1,6 +1,8 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronLeft, Minus, PackageCheck, Plus, RotateCcw, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { addToCart } from "../store/cartSlice";
 import defaultProductImage from "../assets/default_product.png";
 import { useGetProductByIdQuery } from "../store/productsApi";
 
@@ -41,6 +43,8 @@ function ProductDetailsPage() {
   const { data, error, isLoading } = useGetProductByIdQuery(productId);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [justAdded, setJustAdded] = useState(false);
+  const dispatch = useDispatch();
 
   if (isLoading) return <ProductDetailsSkeleton />;
 
@@ -65,6 +69,20 @@ function ProductDetailsPage() {
   const activeImage = images[Math.min(selectedImage, images.length - 1)].url;
   const isInStock = product.stock > 0;
   const reviewCount = product.NumOfReviews ?? 0;
+
+  const handleAddToCart = () => {
+    dispatch(
+      addToCart({
+        product: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0]?.url ?? "",
+        stock: product.stock,
+        quantity,
+      }),
+    );
+    setJustAdded(true);
+  };
 
   return (
     <main className="bg-slate-50/70 py-8 sm:py-12">
@@ -127,10 +145,15 @@ function ProductDetailsPage() {
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-                <button type="button" disabled={!isInStock} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300">
+                <button type="button" onClick={handleAddToCart} disabled={!isInStock} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300">
                   <ShoppingCart className="h-5 w-5" /> {isInStock ? "Add to cart" : "Out of stock"}
                 </button>
               </div>
+              {justAdded && (
+                <p className="mt-3 text-sm font-medium text-emerald-700">
+                  Added to cart. <Link to="/cart" className="underline hover:text-emerald-800">View cart</Link>
+                </p>
+              )}
               {isInStock && <p className="mt-3 text-sm text-slate-500">{product.stock} available from {product.seller}</p>}
 
               <div className="mt-9 grid gap-4 border-t border-slate-200 pt-7 sm:grid-cols-3">

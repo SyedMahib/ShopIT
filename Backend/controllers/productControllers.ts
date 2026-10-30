@@ -37,12 +37,41 @@ export const getProducts = catchAsyncErrors(
   },
 );
 
+// Fields an admin may set on a product. Ratings and reviews are managed by the review endpoints.
+const editableProductFields = ["name", "price", "description", "images", "category", "seller", "stock"];
+
+const pickProductFields = (body: Record<string, any>) => {
+  const data: Record<string, any> = {};
+  for (const field of editableProductFields) {
+    if (body[field] !== undefined) data[field] = body[field];
+  }
+  if (Array.isArray(data.images)) {
+    data.images = data.images.map((img: any) => ({
+      public_id: img?.public_id || String(img?.url ?? ""),
+      url: String(img?.url ?? ""),
+    }));
+  }
+  return data;
+};
+
+// Get all products - Admin => GET /api/v1/admin/products
+export const adminProducts = catchAsyncErrors(
+  async (req: Request, res: Response): Promise<void> => {
+    const products = await Product.find().select("-reviews").sort({ createdAt: -1 });
+
+    res.status(200).json({
+      products,
+    });
+  },
+);
+
 // Create new product => POST /api/v1/admin/products
 export const newProduct = catchAsyncErrors(
   async (req: Request, res: Response): Promise<void> => {
-    req.body.user = (req.user as any)?._id;
-
-    const product = await Product.create(req.body);
+    const product = await Product.create({
+      ...pickProductFields(req.body),
+      user: (req.user as any)?._id,
+    });
 
     res.status(201).json({
       product,
@@ -76,11 +105,9 @@ export const updateProduct = catchAsyncErrors(
       return;
     }
 
-    req.body.user = (req.user as any)?._id;
-
-    product = await Product.findByIdAndUpdate(req.params?.id, req.body, {
+    product = await Product.findByIdAndUpdate(req.params?.id, pickProductFields(req.body), {
       returnDocument: "after",
-      runvalidators: true,
+      runValidators: true,
     });
 
     res.status(200).json({

@@ -16,6 +16,8 @@ export interface ShippingInfo {
   country: string;
 }
 
+export type OrderStatus = "Processing" | "Shipped" | "Delivered" | "Cancelled";
+
 export interface Order {
   _id: string;
   orderItems: OrderItem[];
@@ -26,8 +28,10 @@ export interface Order {
   totalAmount: number;
   paymentMethod: "COD" | "Card";
   paymentInfo?: { id?: string; status?: string };
-  orderStatus: "Processing" | "Shipped";
+  orderStatus: OrderStatus;
   deliveredAt?: string;
+  cancelledAt?: string;
+  user?: string | { _id: string; name: string; email: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +44,12 @@ export interface MyOrdersResponse {
 export interface OrderDetailsResponse {
   success?: boolean;
   order: Order;
+}
+
+export interface NewOrderRequest {
+  orderItems: { product: string; quantity: number }[];
+  shippingInfo: ShippingInfo;
+  paymentMethod: "COD" | "Card";
 }
 
 export const ordersApi = createApi({
@@ -55,7 +65,23 @@ export const ordersApi = createApi({
       query: (orderId) => `/orders/${orderId}`,
       providesTags: (_result, _error, orderId) => [{ type: "Orders", id: orderId }],
     }),
+    createOrder: builder.mutation<OrderDetailsResponse, NewOrderRequest>({
+      query: (body) => ({
+        url: "/orders/new",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Orders"],
+    }),
+    cancelOrder: builder.mutation<OrderDetailsResponse, string>({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/cancel`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Orders"],
+    }),
   }),
 });
 
-export const { useGetMyOrdersQuery, useGetOrderDetailsQuery } = ordersApi;
+export const { useGetMyOrdersQuery, useGetOrderDetailsQuery, useCreateOrderMutation, useCancelOrderMutation } =
+  ordersApi;

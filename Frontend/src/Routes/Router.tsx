@@ -13,6 +13,16 @@ import ProfilePage from "../Pages/ProfilePage";
 import SettingsPage from "../Pages/SettingsPage";
 import WishlistPage from "../Pages/WishlistPage";
 import AuthGuard from "../components/guards/AuthGuard";
+import CartPage from "../Pages/CartPage";
+import ShippingPage from "../Pages/ShippingPage";
+import ConfirmOrderPage from "../Pages/ConfirmOrderPage";
+import OrderDetailsPage from "../Pages/OrderDetailsPage";
+import AdminGuard from "../components/guards/AdminGuard";
+import AdminDashboardPage from "../Pages/admin/AdminDashboardPage";
+import AdminOrdersPage from "../Pages/admin/AdminOrdersPage";
+import AdminProductsPage from "../Pages/admin/AdminProductsPage";
+import ProductFormPage from "../Pages/admin/ProductFormPage";
+import AdminUsersPage from "../Pages/admin/AdminUsersPage";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -51,6 +61,12 @@ const contactRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/contact",
   component: ContactPage,
+});
+
+const cartRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cart",
+  component: CartPage,
 });
 
 // Auth routes
@@ -103,14 +119,94 @@ const wishlistRoute = createRoute({
   component: WishlistPage,
 });
 
+const shippingRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/shipping",
+  component: ShippingPage,
+});
+
+const confirmOrderRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/checkout/confirm",
+  component: ConfirmOrderPage,
+});
+
+const orderDetailsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard/orders/$orderId",
+  validateSearch: (search: Record<string, unknown>): { success?: boolean } =>
+    search.success === true || search.success === "true" ? { success: true } : {},
+  component: OrderDetailsPage,
+});
+
+// Admin routes (require admin role)
+const adminRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  id: "admin",
+  component: AdminGuard,
+});
+
+const adminDashboardRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin",
+  component: AdminDashboardPage,
+});
+
+const adminOrdersRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/orders",
+  component: AdminOrdersPage,
+});
+
+const adminProductsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/products",
+  component: AdminProductsPage,
+});
+
+const adminNewProductRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/products/new",
+  component: ProductFormPage,
+});
+
+const adminEditProductRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/products/$productId/edit",
+  component: ProductFormPage,
+});
+
+const adminUsersRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/admin/users",
+  component: AdminUsersPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   shopRoute,
   productDetailsRoute,
   aboutRoute,
   contactRoute,
+  cartRoute,
   authRoute.addChildren([loginRoute, registerRoute]),
-  protectedRoute.addChildren([dashboardRoute, profileRoute, settingsRoute, wishlistRoute]),
+  protectedRoute.addChildren([
+    dashboardRoute,
+    profileRoute,
+    settingsRoute,
+    wishlistRoute,
+    shippingRoute,
+    confirmOrderRoute,
+    orderDetailsRoute,
+    adminRoute.addChildren([
+      adminDashboardRoute,
+      adminOrdersRoute,
+      adminProductsRoute,
+      adminNewProductRoute,
+      adminEditProductRoute,
+      adminUsersRoute,
+    ]),
+  ]),
 ]);
 
 export const router = createRouter({ routeTree });

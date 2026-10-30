@@ -2,6 +2,7 @@ import express from "express";
 import {
   createProductReview,
   deleteProduct,
+  adminProducts,
   deleteProductReviews,
   getProductDetails,
   getProductReviews,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.route("/products").get(getProducts);
 router
   .route("/admin/products")
+  .get(isAuthenticatedUser, authorizeRoles("admin"), adminProducts)
   .post(isAuthenticatedUser, authorizeRoles("admin"), newProduct);
 
 router.route("/products/:id").get(getProductDetails);

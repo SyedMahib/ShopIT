@@ -23,6 +23,9 @@ export interface IPaymentInfo {
   status?: string;
 }
 
+export const ORDER_STATUSES = ["Processing", "Shipped", "Delivered", "Cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 export interface IOrder extends Document {
   shippingInfo: IShippingInfo;
   user: mongoose.Types.ObjectId;
@@ -33,8 +36,9 @@ export interface IOrder extends Document {
   taxAmount: number;
   shippingAmount: number;
   totalAmount: number;
-  orderStatus: "Processing" | "Shipped";
+  orderStatus: OrderStatus;
   deliveredAt?: Date;
+  cancelledAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -126,12 +130,13 @@ const orderSchema = new Schema<IOrder>(
     orderStatus: {
       type: String,
       enum: {
-        values: ["Processing", "Shipped"],
+        values: [...ORDER_STATUSES],
         message: "Please select correct order status.",
       },
       default: "Processing",
     },
     deliveredAt: Date,
+    cancelledAt: Date,
   },
   { timestamps: true },
 );

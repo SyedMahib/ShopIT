@@ -1,7 +1,9 @@
-import { ShoppingCart, Star, Heart } from "lucide-react";
+import { ShoppingCart, Star, Heart, Check } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useSelector } from "react-redux";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useAddToWishlistMutation } from "../store/productsApi";
+import { addToCart } from "../store/cartSlice";
 import type { RootState } from "../store";
 
 export interface ProductCardProps {
@@ -13,6 +15,7 @@ export interface ProductCardProps {
   imageUrl: string;
   category: string;
   description?: string;
+  stock?: number;
 }
 
 function formatPrice(price: number) {
@@ -28,8 +31,12 @@ function ProductCard({
   imageUrl,
   category,
   description,
+  stock = 0,
 }: ProductCardProps) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [justAdded, setJustAdded] = useState(false);
+  const isInStock = stock > 0;
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [addToWishlist] = useAddToWishlistMutation();
 
@@ -43,6 +50,14 @@ function ProductCard({
     }
     
     await addToWishlist({ productId: id }).unwrap();
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(addToCart({ product: id, name, price, image: imageUrl, stock, quantity: 1 }));
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
   };
 
   return (
@@ -76,10 +91,13 @@ function ProductCard({
             </button>
             <button
               type="button"
-              aria-label={`Add ${name} to cart`}
-              className="grid h-9 w-9 place-items-center rounded-md bg-blue-600 text-white transition-colors hover:bg-blue-500"
+              aria-label={isInStock ? `Add ${name} to cart` : `${name} is out of stock`}
+              title={isInStock ? undefined : "Out of stock"}
+              onClick={handleAddToCart}
+              disabled={!isInStock}
+              className="grid h-9 w-9 place-items-center rounded-md bg-blue-600 text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              <ShoppingCart className="h-4 w-4" />
+              {justAdded ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
             </button>
           </div>
         </div>

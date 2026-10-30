@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, Search, ShoppingCart, User, LogOut, ChevronDown, LayoutDashboard, X } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, LogOut, ChevronDown, LayoutDashboard, ShieldCheck, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../store";
 import { clearUser } from "../../store/authSlice";
@@ -28,6 +28,9 @@ export function Header() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const cartCount = useSelector((state: RootState) =>
+    state.cart.items.reduce((sum, i) => sum + i.quantity, 0),
+  );
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const { currentData: suggestionData, isFetching: isLoadingSuggestions } = useGetProductsQuery(
@@ -183,13 +186,18 @@ export function Header() {
             )}
           </form>
 
-          <button
-            type="button"
-            aria-label="Cart"
+          <Link
+            to="/cart"
+            aria-label={`Cart (${cartCount} items)`}
             className="relative rounded-md p-2 text-slate-700 transition-colors hover:bg-slate-100"
           >
             <ShoppingCart className="h-5 w-5" />
-          </button>
+            {cartCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-blue-600 px-1 text-[11px] font-semibold text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
 
           {isAuthenticated && user ? (
             <div className="relative" ref={userMenuRef}>
@@ -244,6 +252,16 @@ export function Header() {
                     <LayoutDashboard className="h-4 w-4" />
                     Dashboard
                   </Link>
+                  {user.role === "admin" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}

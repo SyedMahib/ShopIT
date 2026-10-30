@@ -16,23 +16,12 @@ import {
   Settings,
   Receipt,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import type { RootState } from "../store";
 import { useGetMyOrdersQuery } from "../store/ordersApi";
 import type { Order } from "../store/ordersApi";
-
-const statusConfig: Record<string, { color: string; bg: string; icon: typeof Clock }> = {
-  Processing: {
-    color: "text-amber-700",
-    bg: "bg-amber-50 border-amber-200",
-    icon: Clock,
-  },
-  Shipped: {
-    color: "text-blue-700",
-    bg: "bg-blue-50 border-blue-200",
-    icon: Truck,
-  },
-};
+import { statusConfig } from "../components/orders/orderStatus";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
@@ -83,9 +72,13 @@ function OrderCard({ order }: { order: Order }) {
           {order.shippingInfo.city}, {order.shippingInfo.country}
         </span>
       </div>
-      <button className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900">
+      <Link
+        to="/dashboard/orders/$orderId"
+        params={{ orderId: order._id }}
+        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900"
+      >
         View Details <ChevronRight className="h-3 w-3" />
-      </button>
+      </Link>
     </div>
   );
 }
@@ -170,7 +163,9 @@ export default function DashboardPage() {
   const orders = ordersData?.orders ?? [];
 
   const totalOrders = orders.length;
-  const totalSpent = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalSpent = orders
+    .filter((o) => o.orderStatus !== "Cancelled")
+    .reduce((sum, o) => sum + o.totalAmount, 0);
   const processingOrders = orders.filter((o) => o.orderStatus === "Processing").length;
   const shippedOrders = orders.filter((o) => o.orderStatus === "Shipped").length;
   const recentOrders = orders.slice(0, 5);
@@ -291,6 +286,14 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="mt-5 space-y-2">
+              {user?.role === "admin" && (
+                <SidebarItem
+                  icon={ShieldCheck}
+                  label="Admin Panel"
+                  description="Manage orders, products & users"
+                  to="/admin"
+                />
+              )}
               <SidebarItem icon={User} label="My Profile" description="Edit your personal info" to="/dashboard/profile" />
               <SidebarItem
                 icon={Settings}

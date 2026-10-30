@@ -9,6 +9,7 @@ export interface Product {
   images: { url: string }[];
   category: string;
   description?: string;
+  stock?: number;
 }
 
 interface ProductGridProps {
@@ -87,6 +88,7 @@ function ProductGrid({ products, loading, refreshing = false, skeletonCount = 8,
             imageUrl={product.images?.[0]?.url || "https://via.placeholder.com/400x300"}
             category={product.category}
             description={product.description}
+            stock={product.stock}
           />
         ))}
       </div>
