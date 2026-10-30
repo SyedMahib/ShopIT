@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSelector } from "react-redux";
+import { avatarSrc } from "../utils/avatar";
 import defaultAvatar from "../assets/default_avatar.jpg";
 import {
   Package,
@@ -185,7 +186,7 @@ export default function DashboardPage() {
         </div>
         {user?.avatar?.url ? (
           <img
-            src={`/api/avatar/${user._id}`}
+            src={avatarSrc(user)}
             alt={user.name}
             className="h-12 w-12 rounded-full object-cover ring-2 ring-slate-200"
           />
@@ -262,7 +263,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
               {user?.avatar?.url ? (
                 <img
-                  src={`/api/avatar/${user._id}`}
+                  src={avatarSrc(user)}
                   alt={user.name}
                   className="h-14 w-14 rounded-full object-cover ring-2 ring-slate-100"
                 />

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { useSelector } from "react-redux";
 import { MessageSquare, Star, Trash2 } from "lucide-react";
 import defaultAvatar from "../../assets/default_avatar.jpg";
+import { avatarSrc } from "../../utils/avatar";
 import {
   useCanReviewQuery,
   useDeleteReviewMutation,
@@ -160,7 +161,7 @@ export default function ProductReviews({ productId, rating }: { productId: strin
             {reviews.map((review) => (
               <li key={review._id} className="flex gap-4 py-5">
                 <img
-                  src={review.user?.avatar?.url ? `/api/avatar/${review.user._id}` : defaultAvatar}
+                  src={avatarSrc(review.user)}
                   alt=""
                   className="h-10 w-10 shrink-0 rounded-full object-cover"
                   onError={(e) => {

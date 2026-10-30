@@ -22,14 +22,15 @@ passport.use(
         user = await User.findOne({ email: profile.emails?.[0]?.value });
 
         if (user) {
-          // Link Google account to existing user
+          // Link Google account to existing user, keeping their own picture
           user.googleAuthId = profile.id;
-          user.name = profile.displayName;
-          user.avatar = {
-            public_id: profile.id,
-            url: profile.photos?.[0]?.value || "",
-          };
-          await user.save();
+          if (!user.avatar?.url && profile.photos?.[0]?.value) {
+            user.avatar = {
+              public_id: profile.id,
+              url: profile.photos[0].value,
+            };
+          }
+          await user.save({ validateModifiedOnly: true });
           return done(null, user);
         }
 

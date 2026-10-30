@@ -1,9 +1,10 @@
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import { v2 as cloudinary, UploadApiOptions, UploadApiResponse } from "cloudinary";
 import ErrorHandler from "./errorHandler.js";
 
-// Images we upload live in this folder. Only images in it are ever deleted,
-// so seed/demo images from other accounts are never touched.
+// Images we upload live in these folders. Only images in them are ever
+// deleted, so seed/demo images from other accounts are never touched.
 export const PRODUCT_IMAGE_FOLDER = "ShopIT/products";
+export const AVATAR_FOLDER = "ShopIT/avatars";
 
 let configured = false;
 
@@ -27,17 +28,16 @@ const ensureConfigured = (): void => {
   configured = true;
 };
 
-export const uploadImage = (buffer: Buffer): Promise<{ public_id: string; url: string }> => {
+const uploadToFolder = (
+  buffer: Buffer,
+  folder: string,
+  transformation: UploadApiOptions["transformation"],
+): Promise<{ public_id: string; url: string }> => {
   ensureConfigured();
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: PRODUCT_IMAGE_FOLDER,
-        resource_type: "image",
-        // Keep stored images a sensible size
-        transformation: [{ width: 1600, height: 1600, crop: "limit" }],
-      },
+      { folder, resource_type: "image", transformation },
       (error, result?: UploadApiResponse) => {
         if (error || !result) {
           reject(new ErrorHandler(error?.message || "Image upload failed", 500));
@@ -50,8 +50,19 @@ export const uploadImage = (buffer: Buffer): Promise<{ public_id: string; url: s
   });
 };
 
+// Keep stored product images a sensible size
+export const uploadImage = (buffer: Buffer) =>
+  uploadToFolder(buffer, PRODUCT_IMAGE_FOLDER, [{ width: 1600, height: 1600, crop: "limit" }]);
+
+// Square avatar, cropped around the face when one is found
+export const uploadAvatar = (buffer: Buffer) =>
+  uploadToFolder(buffer, AVATAR_FOLDER, [{ width: 400, height: 400, crop: "fill", gravity: "face" }]);
+
+export const isInFolder = (publicId: string | undefined, folder: string): boolean =>
+  Boolean(publicId?.startsWith(`${folder}/`));
+
 export const isOwnImage = (publicId?: string): boolean =>
-  Boolean(publicId?.startsWith(`${PRODUCT_IMAGE_FOLDER}/`));
+  isInFolder(publicId, PRODUCT_IMAGE_FOLDER) || isInFolder(publicId, AVATAR_FOLDER);
 
 // Best effort: a failed delete only leaves an unused file in Cloudinary
 export const deleteImages = async (publicIds: (string | undefined)[]): Promise<void> => {

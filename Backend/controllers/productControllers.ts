@@ -6,7 +6,7 @@ import type { IReview } from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import APIFilters from "../utils/apiFilters.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
-import { deleteImages, isOwnImage, uploadImage } from "../utils/cloudinary.js";
+import { deleteImages, isInFolder, PRODUCT_IMAGE_FOLDER, uploadImage } from "../utils/cloudinary.js";
 
 // Get all products => GET /api/v1/products
 export const getProducts = catchAsyncErrors(
@@ -82,7 +82,7 @@ export const deleteUnusedImage = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const publicId = String(req.body.public_id ?? "");
 
-    if (!isOwnImage(publicId)) {
+    if (!isInFolder(publicId, PRODUCT_IMAGE_FOLDER)) {
       next(new ErrorHandler("Invalid image", 400));
       return;
     }

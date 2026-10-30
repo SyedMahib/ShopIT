@@ -6,6 +6,7 @@ import type { RootState } from "../../store";
 import { clearUser } from "../../store/authSlice";
 import { useLogoutMutation } from "../../store/authApi";
 import defaultProductImage from "../../assets/default_product.png";
+import { avatarSrc } from "../../utils/avatar";
 import defaultAvatar from "../../assets/default_avatar.jpg";
 import { useGetProductsQuery } from "../../store/productsApi";
 
@@ -210,7 +211,7 @@ export function Header() {
               >
                 {user.avatar?.url ? (
                   <img
-                    src={`/api/avatar/${user._id}`}
+                    src={avatarSrc(user)}
                     alt={user.name}
                     className="h-7 w-7 rounded-full object-cover ring-2 ring-slate-200"
                   />
@@ -232,7 +233,7 @@ export function Header() {
                 <div className="absolute right-0 top-full z-50 mt-2 w-70 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
                   <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5">
                     {user.avatar?.url ? (
-                      <img src={`/api/avatar/${user._id}`} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" />
+                      <img src={avatarSrc(user)} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" />
                     ) : (
                       <img src={defaultAvatar} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" onError={(e) => {
                         e.currentTarget.onerror = null;

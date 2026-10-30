@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { deleteImages, uploadAvatar } from "../utils/cloudinary.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import User from "../models/user.js";
 import ErrorHandler from "../utils/errorHandler.js";
@@ -237,6 +238,50 @@ export const resetPassword = catchAsyncErrors(
     }
   )
 
+  // Upload/replace profile picture => /api/v1/me/avatar (PUT)
+  export const updateAvatar = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const file = (req.files as Express.Multer.File[] | undefined)?.[0];
+
+      if (!file) {
+        return next(new ErrorHandler("Please choose an image", 400));
+      }
+
+      const user = await User.findById((req.user as any)?._id);
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
+      const oldPublicId = user.avatar?.public_id;
+      user.avatar = await uploadAvatar(file.buffer);
+      await user.save({ validateModifiedOnly: true });
+      await deleteImages([oldPublicId]);
+
+      res.status(200).json({
+        user
+      })
+    }
+  )
+
+  // Remove profile picture => /api/v1/me/avatar (DELETE)
+  export const removeAvatar = catchAsyncErrors(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const user = await User.findById((req.user as any)?._id);
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
+      const oldPublicId = user.avatar?.public_id;
+      user.avatar = undefined;
+      await user.save({ validateModifiedOnly: true });
+      await deleteImages([oldPublicId]);
+
+      res.status(200).json({
+        user
+      })
+    }
+  )
+
       // Get All Users - Admin => /api/v1/admin/users
 
   export const allUsers = catchAsyncErrors(
@@ -316,9 +361,8 @@ export const resetPassword = catchAsyncErrors(
         return next(new ErrorHandler("You can't delete your own account", 400))
       }
 
-      // TODO - Remove User Avatar From Cloudinary
-
       await user.deleteOne();
+      await deleteImages([user.avatar?.public_id]);
 
       res.status(200).json({
         success: true,

@@ -78,12 +78,24 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
-    updateProfile: builder.mutation<User, Partial<User>>({
+    updateProfile: builder.mutation<{ user: User }, Partial<User>>({
       query: (body) => ({
         url: "/me/update",
         method: "PUT",
         body,
       }),
+      invalidatesTags: ["User"],
+    }),
+    uploadAvatar: builder.mutation<{ user: User }, File>({
+      query: (file) => {
+        const body = new FormData();
+        body.append("avatar", file);
+        return { url: "/me/avatar", method: "PUT", body };
+      },
+      invalidatesTags: ["User"],
+    }),
+    removeAvatar: builder.mutation<{ user: User }, void>({
+      query: () => ({ url: "/me/avatar", method: "DELETE" }),
       invalidatesTags: ["User"],
     }),
     updatePassword: builder.mutation<{ success: boolean; message: string }, { oldPassword: string; newPassword: string }>({
@@ -96,4 +108,4 @@ export const authApi = createApi({
   }),
 });
 
-export const { useRegisterMutation, useLoginMutation, useLogoutMutation, useGetMeQuery, useGoogleLoginMutation, useUpdateProfileMutation, useUpdatePasswordMutation, useForgotPasswordMutation, useResetPasswordMutation } = authApi;
+export const { useRegisterMutation, useLoginMutation, useLogoutMutation, useGetMeQuery, useGoogleLoginMutation, useUpdateProfileMutation, useUpdatePasswordMutation, useForgotPasswordMutation, useResetPasswordMutation, useUploadAvatarMutation, useRemoveAvatarMutation } = authApi;
