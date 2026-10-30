@@ -1,11 +1,12 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, Search, ShoppingCart, User, LogOut, ChevronDown, X } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, LogOut, ChevronDown, LayoutDashboard, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../store";
 import { clearUser } from "../../store/authSlice";
 import { useLogoutMutation } from "../../store/authApi";
 import defaultProductImage from "../../assets/default_product.png";
+import defaultAvatar from "../../assets/default_avatar.jpg";
 import { useGetProductsQuery } from "../../store/productsApi";
 
 const navItems = [
@@ -206,9 +207,15 @@ export function Header() {
                     className="h-7 w-7 rounded-full object-cover ring-2 ring-slate-200"
                   />
                 ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 ring-2 ring-slate-200">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
+                  <img
+                    src={defaultAvatar}
+                    alt={user.name}
+                    className="h-7 w-7 rounded-full object-cover ring-2 ring-slate-200"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&size=32`;
+                    }}
+                  />
                 )}
                 <span className="hidden text-sm font-medium text-slate-700 sm:block">{user.name}</span>
                 <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
@@ -219,15 +226,24 @@ export function Header() {
                     {user.avatar?.url ? (
                       <img src={`/api/avatar/${user._id}`} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" />
                     ) : (
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600 ring-2 ring-slate-200">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
+                      <img src={defaultAvatar} alt={user.name} className="h-9 w-9 rounded-full object-cover ring-2 ring-slate-200" onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&size=36`;
+                      }} />
                     )}
                     <div>
                       <p className="text-sm font-medium text-slate-800">{user.name}</p>
                       <p className="text-xs text-slate-500">{user.email}</p>
                     </div>
                   </div>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}

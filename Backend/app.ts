@@ -8,6 +8,7 @@ import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/orders.js";
+import wishlistRoutes from "./routes/wishlist.js";
 import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import "./config/passport.config.js";
@@ -18,6 +19,11 @@ process.on("uncaughtException", (err) => {
   console.log("Shutting down the server due to Uncaught Exception");
   process.exit(1)
 })
+
+if (!process.env.JWT_SECRET) {
+  console.log("JWT_SECRET is not set in Backend/config/config.env");
+  process.exit(1);
+}
 
 const app = express();
 
@@ -30,7 +36,7 @@ app.use(cookieParser());
 // Passport session support
 app.use(
   session({
-    secret: process.env.JWT_SECRET || "secretkey",
+    secret: process.env.JWT_SECRET as string,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -47,6 +53,7 @@ app.use(passport.session());
 app.use("/api/v1", productRoutes);
 app.use("/api/v1", authRoutes);
 app.use("/api/v1", orderRoutes);
+app.use("/api/v1", wishlistRoutes);
 
 // Proxy Google avatars (Google blocks direct cross-origin requests)
 app.get("/api/avatar/:id", async (req, res) => {

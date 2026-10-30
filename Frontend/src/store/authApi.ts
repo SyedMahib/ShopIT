@@ -61,7 +61,22 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    updateProfile: builder.mutation<User, Partial<User>>({
+      query: (body) => ({
+        url: "/me/update",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updatePassword: builder.mutation<{ success: boolean; message: string }, { oldPassword: string; newPassword: string }>({
+      query: (body) => ({
+        url: "/password/update",
+        method: "PUT",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useRegisterMutation, useLoginMutation, useLogoutMutation, useGetMeQuery, useGoogleLoginMutation } = authApi;
+export const { useRegisterMutation, useLoginMutation, useLogoutMutation, useGetMeQuery, useGoogleLoginMutation, useUpdateProfileMutation, useUpdatePasswordMutation } = authApi;

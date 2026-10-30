@@ -1,30 +1,26 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { setUser } from "../../store/authSlice";
+import { Navigate, Outlet } from "@tanstack/react-router";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store";
 
 /**
- * Checks if the user is currently authenticated by calling the /me endpoint.
- * If a valid user is returned, updates Redux state and redirects to home.
- * This component renders nothing — it's used as a route wrapper.
+ * Layout route for pages that require login.
+ * Waits for RootLayout's /me check to finish, then either renders the
+ * nested route or redirects to /login.
  */
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const dispatch = useDispatch();
+export default function AuthGuard() {
+  const { isAuthenticated, loading } = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    fetch("/api/v1/me", { credentials: "include" })
-      .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error("Not authenticated");
-      })
-      .then((data) => {
-        if (data?.user) {
-          dispatch(setUser(data.user));
-        }
-      })
-      .catch(() => {
-        // Not authenticated — guard will rely on router navigation elsewhere
-      });
-  }, [dispatch]);
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+      </div>
+    );
+  }
 
-  return <>{children}</>;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return <Outlet />;
 }

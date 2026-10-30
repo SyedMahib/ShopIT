@@ -8,19 +8,45 @@ import ErrorHandler from "../utils/errorHandler.js";
 
 export const newOrder = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const {
-      orderItems,
-      shippingInfo,
-      itemsPrice,
-      taxAmount,
-      shippingAmount,
-      totalAmount,
-      paymentMethod,
-      paymentInfo,
-    } = req.body;
+    const { orderItems, shippingInfo, paymentMethod, paymentInfo } = req.body;
+
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
+      return next(new ErrorHandler("Please add items to your order", 400));
+    }
+
+    // Build items from the database so prices can't be set by the client
+    const items = [];
+    for (const item of orderItems) {
+      const quantity = Number(item?.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        return next(new ErrorHandler("Invalid item quantity", 400));
+      }
+
+      const product = await Product.findById(item?.product);
+      if (!product) {
+        return next(new ErrorHandler("Product not found", 404));
+      }
+      if (product.stock < quantity) {
+        return next(new ErrorHandler(`Not enough stock for ${product.name}`, 400));
+      }
+
+      items.push({
+        name: product.name,
+        quantity,
+        image: product.images[0]?.url ?? "",
+        price: String(product.price),
+        product: product._id,
+      });
+    }
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const itemsPrice = round(items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0));
+    const shippingAmount = itemsPrice > 100 ? 0 : 25;
+    const taxAmount = round(itemsPrice * 0.15);
+    const totalAmount = round(itemsPrice + shippingAmount + taxAmount);
 
     const order = await Order.create({
-      orderItems,
+      orderItems: items,
       shippingInfo,
       itemsPrice,
       taxAmount,
@@ -47,6 +73,12 @@ export const getOrderDetails = catchAsyncErrors(
     );
 
     if (!order) {
+      return next(new ErrorHandler("No order found with this ID", 404));
+    }
+
+    const currentUser = req.user as any;
+    const isOwner = (order.user as any)?._id?.toString() === currentUser?._id?.toString();
+    if (!isOwner && currentUser?.role !== "admin") {
       return next(new ErrorHandler("No order found with this ID", 404));
     }
 

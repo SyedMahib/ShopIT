@@ -13,7 +13,7 @@ class APIFilters {
     const keyword = this.queryStr.keyword
       ? {
           name: {
-            $regex: this.queryStr.keyword,
+            $regex: String(this.queryStr.keyword).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
             $options: "i",
           },
         }

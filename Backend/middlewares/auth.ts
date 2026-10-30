@@ -19,7 +19,14 @@ export const isAuthenticatedUser = catchAsyncErrors(
       process.env.JWT_SECRET as string
     ) as { id: string };
 
-    req.user = await User.findById(decoded.id) ?? undefined;
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      next(new ErrorHandler("User no longer exists, please login again", 401));
+      return;
+    }
+
+    req.user = user;
 
     next();
   }

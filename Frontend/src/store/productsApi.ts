@@ -54,3 +54,53 @@ export const productsApi = createApi({
 });
 
 export const { useGetProductsQuery, useGetProductByIdQuery } = productsApi;
+
+export interface WishlistProduct {
+  _id: string;
+  name: string;
+  price: number;
+  images: { public_id?: string; url: string }[];
+  category: string;
+  stock: number;
+  ratings: number;
+}
+
+export interface WishlistData {
+  success: boolean;
+  wishlist: {
+    _id: string;
+    user: string;
+    products: WishlistProduct[];
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export const wishlistApi = createApi({
+  reducerPath: "wishlistApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1", credentials: "include" }),
+  tagTypes: ["Wishlist"],
+  endpoints: (builder) => ({
+    getWishlist: builder.query<WishlistData, void>({
+      query: () => "/wishlist",
+      providesTags: ["Wishlist"],
+    }),
+    addToWishlist: builder.mutation<WishlistData, { productId: string }>({
+      query: (body) => ({
+        url: "/wishlist/add",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Wishlist"],
+    }),
+    removeFromWishlist: builder.mutation<WishlistData, string>({
+      query: (productId) => ({
+        url: `/wishlist/remove/${productId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Wishlist"],
+    }),
+  }),
+});
+
+export const { useGetWishlistQuery, useAddToWishlistMutation, useRemoveFromWishlistMutation } = wishlistApi;

@@ -217,13 +217,13 @@ export const resetPassword = catchAsyncErrors(
   export const updateProfile = catchAsyncErrors(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
      
-      const newUserData = {
-        name: req.body.name,
-        email: req.body.email,
-      };
+      const newUserData: { name?: string; email?: string } = {};
+      if (req.body.name !== undefined) newUserData.name = req.body.name;
+      if (req.body.email !== undefined) newUserData.email = req.body.email;
 
       const user = await User.findByIdAndUpdate((req.user as any)?._id, newUserData, {
         returnDocument: "after",
+        runValidators: true,
       })
 
       res.status(200).json({

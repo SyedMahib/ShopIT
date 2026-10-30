@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Mail, Lock, AlertCircle } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState } from "../../store";
 import { setUser } from "../../store/authSlice";
 import { useLoginMutation } from "../../store/authApi";
 
@@ -13,9 +14,16 @@ interface ErrorResponse {
 export default function LoginPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [login, { isLoading }] = useLoginMutation();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));

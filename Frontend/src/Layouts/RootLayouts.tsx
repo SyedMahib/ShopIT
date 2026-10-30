@@ -1,7 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { setUser } from "../store/authSlice";
+import { clearUser, setUser } from "../store/authSlice";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 
@@ -16,8 +16,9 @@ function RootLayout() {
       })
       .then((data) => {
         if (data?.user) dispatch(setUser(data.user));
+        else dispatch(clearUser());
       })
-      .catch(() => {});
+      .catch(() => dispatch(clearUser()));
   }, [dispatch]);
 
   return (

@@ -8,6 +8,11 @@ import ProductDetailsPage from "../Pages/ProductDetailsPage";
 import AuthLayout from "../Layouts/AuthLayouts";
 import LoginPage from "../Pages/Auth/LoginPage";
 import RegisterPage from "../Pages/Auth/RegisterPage";
+import DashboardPage from "../Pages/DashboardPage";
+import ProfilePage from "../Pages/ProfilePage";
+import SettingsPage from "../Pages/SettingsPage";
+import WishlistPage from "../Pages/WishlistPage";
+import AuthGuard from "../components/guards/AuthGuard";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -67,6 +72,37 @@ const registerRoute = createRoute({
   component: RegisterPage,
 });
 
+// Protected routes (require login)
+const protectedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "protected",
+  component: AuthGuard,
+});
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard",
+  component: DashboardPage,
+});
+
+const profileRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard/profile",
+  component: ProfilePage,
+});
+
+const settingsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard/settings",
+  component: SettingsPage,
+});
+
+const wishlistRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/dashboard/wishlist",
+  component: WishlistPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   shopRoute,
@@ -74,6 +110,7 @@ const routeTree = rootRoute.addChildren([
   aboutRoute,
   contactRoute,
   authRoute.addChildren([loginRoute, registerRoute]),
+  protectedRoute.addChildren([dashboardRoute, profileRoute, settingsRoute, wishlistRoute]),
 ]);
 
 export const router = createRouter({ routeTree });

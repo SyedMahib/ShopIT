@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Mail, Lock, User, AlertCircle } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState } from "../../store";
 import { setUser } from "../../store/authSlice";
 import { useRegisterMutation } from "../../store/authApi";
 
@@ -13,9 +14,16 @@ interface ErrorResponse {
 export default function RegisterPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [registerError, setRegisterError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
