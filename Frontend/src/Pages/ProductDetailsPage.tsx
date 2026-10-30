@@ -3,6 +3,7 @@ import { ChevronLeft, Minus, PackageCheck, Plus, RotateCcw, ShieldCheck, Shoppin
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../store/cartSlice";
+import ProductReviews from "../components/reviews/ProductReviews";
 import defaultProductImage from "../assets/default_product.png";
 import { useGetProductByIdQuery } from "../store/productsApi";
 
@@ -176,6 +177,8 @@ function ProductDetailsPage() {
             <div className="rounded-xl bg-slate-50 p-4"><dt className="text-slate-500">Availability</dt><dd className={`mt-1 font-semibold ${isInStock ? "text-emerald-700" : "text-rose-600"}`}>{isInStock ? `${product.stock} in stock` : "Currently unavailable"}</dd></div>
           </dl>
         </section>
+
+        <ProductReviews productId={product._id} rating={product.ratings} />
       </div>
     </main>
   );

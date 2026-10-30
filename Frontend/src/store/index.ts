@@ -54,6 +54,7 @@ store.subscribe(() => {
   store.dispatch(wishlistApi.util.resetApiState());
   store.dispatch(authApi.util.resetApiState());
   store.dispatch(adminApi.util.resetApiState());
+  store.dispatch(productsApi.util.invalidateTags(["Reviews"]));
   if (hadUser) store.dispatch(clearShippingInfo());
 });
 

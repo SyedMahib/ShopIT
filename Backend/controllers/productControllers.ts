@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
+import mongoose from "mongoose";
 import Product from "../models/product.js";
+import Order from "../models/order.js";
 import type { IReview } from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import APIFilters from "../utils/apiFilters.js";
@@ -134,16 +136,43 @@ export const deleteProduct = catchAsyncErrors(
   },
 );
 
-// Creat/Update Reviews =>  /api/v1/reviews
+// Only customers who have received the product may review it
+const hasReceivedProduct = (userId: string, productId: string) =>
+  Order.exists({
+    user: userId,
+    orderStatus: "Delivered",
+    "orderItems.product": productId,
+  });
+
+const recalcRatings = (reviews: IReview[]) =>
+  reviews.length === 0
+    ? 0
+    : Math.round((reviews.reduce((acc, item) => item.rating + acc, 0) / reviews.length) * 10) / 10;
+
+// Create/Update Reviews =>  /api/v1/reviews
 export const createProductReview = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { rating, comment, productId } = req.body;
+    const { productId } = req.body;
+    const rating = Number(req.body.rating);
+    const comment = String(req.body.comment ?? "").trim();
+    const userId = (req.user as any)?._id;
 
-    const review = {
-      user: (req.user as any)?._id,
-      rating: Number(rating),
-      comment,
-    } as IReview;
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      next(new ErrorHandler("Rating must be a whole number from 1 to 5", 400));
+      return;
+    }
+    if (!comment) {
+      next(new ErrorHandler("Please write a comment", 400));
+      return;
+    }
+    if (comment.length > 1000) {
+      next(new ErrorHandler("Comment cannot exceed 1000 characters", 400));
+      return;
+    }
+    if (!mongoose.isValidObjectId(productId)) {
+      next(new ErrorHandler("Product not found", 404));
+      return;
+    }
 
     const product = await Product.findById(productId);
 
@@ -152,26 +181,25 @@ export const createProductReview = catchAsyncErrors(
       return;
     }
 
-    const isReviewed = product?.reviews?.find(
-      (r) => r.user.toString() === (req.user as any)?._id.toString(),
-    );
-
-    if (isReviewed) {
-      product.reviews.forEach((review) => {
-        if (review.user.toString() === (req.user as any)?._id.toString())
-          review.comment = comment;
-        review.rating = rating;
-      });
-    } else {
-      product.reviews.push(review);
-      product.NumOfReviews = product.reviews.length;
+    if (!(await hasReceivedProduct(String(userId), String(product._id)))) {
+      next(new ErrorHandler("You can review this product after your order is delivered", 403));
+      return;
     }
 
-    product.ratings =
-      product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-      product.reviews.length;
+    const existing = product.reviews.find((r) => r.user.toString() === userId.toString());
 
-    await product.save();
+    if (existing) {
+      existing.rating = rating;
+      existing.comment = comment;
+    } else {
+      product.reviews.push({ user: userId, rating, comment } as IReview);
+    }
+
+    product.NumOfReviews = product.reviews.length;
+    product.ratings = recalcRatings(product.reviews);
+
+    // Seeded products have no creator `user`, so only validate what changed
+    await product.save({ validateModifiedOnly: true });
 
     res.status(200).json({
       success: true,
@@ -179,18 +207,37 @@ export const createProductReview = catchAsyncErrors(
   },
 );
 
-// Get product Reviews => /api/v1/reviews
-
+// Get product Reviews (public) => /api/v1/reviews?id=
 export const getProductReviews = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
-    const product = await Product.findById(req.query.id);
+    if (!mongoose.isValidObjectId(req.query.id)) {
+      return next(new ErrorHandler("Product not found", 404));
+    }
+
+    const product = await Product.findById(req.query.id)
+      .select("reviews")
+      .populate("reviews.user", "name avatar");
 
     if (!product) {
-      return next(new ErrorHandler("No reviews found for this product", 404));
+      return next(new ErrorHandler("Product not found", 404));
     }
 
     res.status(200).json({
       reviews: product.reviews,
+    });
+  },
+);
+
+// Can the current user review this product? => /api/v1/can_review?productId=
+export const canUserReview = catchAsyncErrors(
+  async (req: Request, res: Response): Promise<void> => {
+    const productId = req.query.productId;
+    const canReview = mongoose.isValidObjectId(productId)
+      ? Boolean(await hasReceivedProduct(String((req.user as any)?._id), String(productId)))
+      : false;
+
+    res.status(200).json({
+      canReview,
     });
   },
 );
@@ -211,10 +258,7 @@ export const deleteProductReviews = catchAsyncErrors(
 
     const numOfReviews = reviews.length;
 
-    const ratings =
-      numOfReviews === 0
-        ? 0
-        : reviews.reduce((acc, item) => item.rating + acc, 0) / numOfReviews;
+    const ratings = recalcRatings(reviews);
 
     product = await Product.findByIdAndUpdate(
       req.query.productId,

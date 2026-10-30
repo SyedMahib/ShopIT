@@ -15,10 +15,17 @@ export interface ProductDetails {
   stock: number;
 }
 
+export interface Review {
+  _id: string;
+  user: { _id: string; name: string; avatar?: { url?: string } } | null;
+  rating: number;
+  comment: string;
+}
+
 export const productsApi = createApi({
   reducerPath: "productsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
-  tagTypes: ["Products"],
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1", credentials: "include" }),
+  tagTypes: ["Products", "Reviews"],
   // Retain inactive product queries for five minutes so returning to a view is instant.
   keepUnusedDataFor: 300,
   // Refresh cached data after a minute when a view remounts or its query changes.
@@ -50,10 +57,45 @@ export const productsApi = createApi({
       query: (productId) => `/products/${productId}`,
       providesTags: (_result, _error, productId) => [{ type: "Products", id: productId }],
     }),
+    getProductReviews: builder.query<{ reviews: Review[] }, string>({
+      query: (productId) => `/reviews?id=${productId}`,
+      providesTags: (_result, _error, productId) => [{ type: "Reviews", id: productId }],
+    }),
+    canReview: builder.query<{ canReview: boolean }, string>({
+      query: (productId) => `/can_review?productId=${productId}`,
+      providesTags: (_result, _error, productId) => [{ type: "Reviews", id: productId }],
+    }),
+    submitReview: builder.mutation<{ success: boolean }, { productId: string; rating: number; comment: string }>({
+      query: (body) => ({ url: "/reviews", method: "PUT", body }),
+      // New review changes the product's average rating too
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: "Reviews", id: productId },
+        { type: "Products", id: productId },
+        { type: "Products", id: "LIST" },
+      ],
+    }),
+    deleteReview: builder.mutation<{ success: boolean }, { productId: string; reviewId: string }>({
+      query: ({ productId, reviewId }) => ({
+        url: `/admin/reviews?productId=${productId}&id=${reviewId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: "Reviews", id: productId },
+        { type: "Products", id: productId },
+        { type: "Products", id: "LIST" },
+      ],
+    }),
   }),
 });
 
-export const { useGetProductsQuery, useGetProductByIdQuery } = productsApi;
+export const {
+  useGetProductsQuery,
+  useGetProductByIdQuery,
+  useGetProductReviewsQuery,
+  useCanReviewQuery,
+  useSubmitReviewMutation,
+  useDeleteReviewMutation,
+} = productsApi;
 
 export interface WishlistProduct {
   _id: string;
