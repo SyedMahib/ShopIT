@@ -6,6 +6,7 @@ import type { IReview } from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import APIFilters from "../utils/apiFilters.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import { deleteImages, isOwnImage, uploadImage } from "../utils/cloudinary.js";
 
 // Get all products => GET /api/v1/products
 export const getProducts = catchAsyncErrors(
@@ -55,6 +56,50 @@ const pickProductFields = (body: Record<string, any>) => {
   }
   return data;
 };
+
+// Upload product images - Admin => POST /api/v1/admin/products/images
+// Returns { public_id, url } for each image; the product form saves them with the product.
+export const uploadProductImages = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+
+    if (files.length === 0) {
+      next(new ErrorHandler("Please choose at least one image", 400));
+      return;
+    }
+
+    const images = await Promise.all(files.map((file) => uploadImage(file.buffer)));
+
+    res.status(200).json({
+      images,
+    });
+  },
+);
+
+// Delete an uploaded image that was never saved to a product - Admin
+// => POST /api/v1/admin/products/images/delete
+export const deleteUnusedImage = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const publicId = String(req.body.public_id ?? "");
+
+    if (!isOwnImage(publicId)) {
+      next(new ErrorHandler("Invalid image", 400));
+      return;
+    }
+
+    // Never delete an image a saved product still uses
+    if (await Product.exists({ "images.public_id": publicId })) {
+      next(new ErrorHandler("Image is used by a product", 400));
+      return;
+    }
+
+    await deleteImages([publicId]);
+
+    res.status(200).json({
+      success: true,
+    });
+  },
+);
 
 // Get all products - Admin => GET /api/v1/admin/products
 export const adminProducts = catchAsyncErrors(
@@ -107,10 +152,16 @@ export const updateProduct = catchAsyncErrors(
       return;
     }
 
+    const oldImageIds = product.images.map((img) => img.public_id);
+
     product = await Product.findByIdAndUpdate(req.params?.id, pickProductFields(req.body), {
       returnDocument: "after",
       runValidators: true,
     });
+
+    // Remove images that were taken off the product
+    const keptIds = new Set(product?.images.map((img) => img.public_id));
+    await deleteImages(oldImageIds.filter((id) => !keptIds.has(id)));
 
     res.status(200).json({
       product,
@@ -129,6 +180,7 @@ export const deleteProduct = catchAsyncErrors(
     }
 
     await product.deleteOne();
+    await deleteImages(product.images.map((img) => img.public_id));
 
     res.status(200).json({
       message: "Product deleted successfully",

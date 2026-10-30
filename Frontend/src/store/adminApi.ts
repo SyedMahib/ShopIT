@@ -27,7 +27,12 @@ export interface ProductInput {
   category: string;
   seller: string;
   stock: number;
-  images: { url: string }[];
+  images: ProductImage[];
+}
+
+export interface ProductImage {
+  public_id?: string;
+  url: string;
 }
 
 export const adminApi = createApi({
@@ -63,6 +68,16 @@ export const adminApi = createApi({
       query: ({ id, body }) => ({ url: `/products/${id}`, method: "PUT", body }),
       invalidatesTags: ["AdminProducts"],
     }),
+    uploadProductImages: builder.mutation<{ images: Required<ProductImage>[] }, File[]>({
+      query: (files) => {
+        const body = new FormData();
+        files.forEach((file) => body.append("images", file));
+        return { url: "/products/images", method: "POST", body };
+      },
+    }),
+    deleteUnusedImage: builder.mutation<{ success: boolean }, string>({
+      query: (public_id) => ({ url: "/products/images/delete", method: "POST", body: { public_id } }),
+    }),
     deleteProduct: builder.mutation<{ message: string }, string>({
       query: (id) => ({ url: `/products/${id}`, method: "DELETE" }),
       invalidatesTags: ["AdminProducts"],
@@ -92,6 +107,8 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUploadProductImagesMutation,
+  useDeleteUnusedImageMutation,
   useGetAllUsersQuery,
   useUpdateUserMutation,
   useDeleteUserMutation,

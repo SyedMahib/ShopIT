@@ -1,14 +1,15 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-import { ChevronLeft, Plus, X } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   PRODUCT_CATEGORIES,
   useCreateProductMutation,
   useGetAdminProductsQuery,
   useUpdateProductMutation,
 } from "../../store/adminApi";
-import type { ProductInput } from "../../store/adminApi";
+import type { ProductImage, ProductInput } from "../../store/adminApi";
+import ProductImagesField from "../../components/admin/ProductImagesField";
 import { productsApi } from "../../store/productsApi";
 import type { ProductDetails } from "../../store/productsApi";
 
@@ -46,8 +47,10 @@ function ProductForm({ product }: { product?: ProductDetails }) {
   const dispatch = useDispatch();
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [imageUrls, setImageUrls] = useState<string[]>(
-    product?.images.length ? product.images.map((i) => i.url) : [""],
+  const [images, setImages] = useState<ProductImage[]>(product?.images ?? []);
+  const savedIds = useMemo(
+    () => new Set((product?.images ?? []).map((i) => i.public_id).filter(Boolean) as string[]),
+    [product],
   );
   const [error, setError] = useState("");
   const isEdit = Boolean(product);
@@ -62,7 +65,7 @@ function ProductForm({ product }: { product?: ProductDetails }) {
       category: String(form.get("category")),
       seller: String(form.get("seller")).trim(),
       stock: Number(form.get("stock")),
-      images: imageUrls.map((url) => url.trim()).filter(Boolean).map((url) => ({ url })),
+      images,
     };
 
     setError("");
@@ -128,40 +131,7 @@ function ProductForm({ product }: { product?: ProductDetails }) {
           <textarea id="description" name="description" required rows={5} defaultValue={product?.description} className={inputClass} />
         </div>
 
-        <fieldset>
-          <legend className="block text-sm font-medium text-slate-700">Image URLs</legend>
-          <div className="mt-2 space-y-2">
-            {imageUrls.map((url, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="url"
-                  value={url}
-                  placeholder="https://..."
-                  aria-label={`Image URL ${index + 1}`}
-                  onChange={(e) => setImageUrls((urls) => urls.map((u, i) => (i === index ? e.target.value : u)))}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                {imageUrls.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setImageUrls((urls) => urls.filter((_, i) => i !== index))}
-                    aria-label={`Remove image ${index + 1}`}
-                    className="rounded-lg border border-slate-300 px-3 text-slate-500 hover:bg-slate-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => setImageUrls((urls) => [...urls, ""])}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            <Plus className="h-4 w-4" /> Add another image
-          </button>
-        </fieldset>
+        <ProductImagesField images={images} onChange={setImages} savedIds={savedIds} />
 
         {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
