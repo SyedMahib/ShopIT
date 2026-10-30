@@ -8,6 +8,8 @@ import ProductDetailsPage from "../Pages/ProductDetailsPage";
 import AuthLayout from "../Layouts/AuthLayouts";
 import LoginPage from "../Pages/Auth/LoginPage";
 import RegisterPage from "../Pages/Auth/RegisterPage";
+import ForgotPasswordPage from "../Pages/Auth/ForgotPasswordPage";
+import ResetPasswordPage from "../Pages/Auth/ResetPasswordPage";
 import DashboardPage from "../Pages/DashboardPage";
 import ProfilePage from "../Pages/ProfilePage";
 import SettingsPage from "../Pages/SettingsPage";
@@ -93,6 +95,18 @@ const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "protected",
   component: AuthGuard,
+});
+
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: "/password/forgot",
+  component: ForgotPasswordPage,
+});
+
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: "/password/reset/$token",
+  component: ResetPasswordPage,
 });
 
 const dashboardRoute = createRoute({
@@ -189,7 +203,7 @@ const routeTree = rootRoute.addChildren([
   aboutRoute,
   contactRoute,
   cartRoute,
-  authRoute.addChildren([loginRoute, registerRoute]),
+  authRoute.addChildren([loginRoute, registerRoute, forgotPasswordRoute, resetPasswordRoute]),
   protectedRoute.addChildren([
     dashboardRoute,
     profileRoute,

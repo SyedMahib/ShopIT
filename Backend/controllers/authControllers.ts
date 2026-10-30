@@ -98,8 +98,16 @@ export const forgotPassword = catchAsyncErrors(
     // Finding user in database
     const user = await User.findOne({ email: req.body.email });
 
+    // Same reply whether or not the account exists, so this endpoint
+    // can't be used to find out which emails are registered
+    const genericReply = {
+      success: true,
+      message: "If an account exists for that email, a reset link has been sent",
+    };
+
     if (!user) {
-      return next(new ErrorHandler("User not found with this email", 404));
+      res.status(200).json(genericReply);
+      return;
     }
 
     //  Get reset password token
@@ -109,7 +117,7 @@ export const forgotPassword = catchAsyncErrors(
 
     // create reset password url
 
-    const resetUrl = `${process.env.FRONTEND_URL}/api/v1/password/reset/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
 
     const message = getResetPasswordTemplate(user.name, resetUrl);
 
@@ -120,10 +128,7 @@ export const forgotPassword = catchAsyncErrors(
         message,
       })
 
-      res.status(200).json({
-        success: true,
-        message: `Email sent to ${user.email} successfully`
-      })
+      res.status(200).json(genericReply)
     } catch (error) {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
