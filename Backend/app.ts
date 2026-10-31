@@ -10,6 +10,8 @@ import authRoutes from "./routes/auth.js";
 import orderRoutes from "./routes/orders.js";
 import wishlistRoutes from "./routes/wishlist.js";
 import contactRoutes from "./routes/contact.js";
+import paymentRoutes from "./routes/payment.js";
+import { stripeWebhook } from "./controllers/paymentControllers.js";
 import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import "./config/passport.config.js";
@@ -30,6 +32,9 @@ const app = express();
 
 // Connect to database
 connectDatabase();
+
+// Stripe signs the raw request body, so the webhook must read it before express.json()
+app.post("/api/v1/payment/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -56,6 +61,7 @@ app.use("/api/v1", authRoutes);
 app.use("/api/v1", orderRoutes);
 app.use("/api/v1", wishlistRoutes);
 app.use("/api/v1", contactRoutes);
+app.use("/api/v1", paymentRoutes);
 
 // Proxy Google avatars (Google blocks direct cross-origin requests)
 app.get("/api/avatar/:id", async (req, res) => {

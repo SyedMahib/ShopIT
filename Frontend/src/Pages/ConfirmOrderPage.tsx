@@ -1,25 +1,60 @@
 import { Link, Navigate } from "@tanstack/react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
-import { Banknote, MapPin } from "lucide-react";
+import { Banknote, CreditCard, Lock, MapPin } from "lucide-react";
 import defaultProductImage from "../assets/default_product.png";
 import { calcOrderPrices, clearCart } from "../store/cartSlice";
-import { useCreateOrderMutation } from "../store/ordersApi";
+import { useCreateCheckoutSessionMutation, useCreateOrderMutation } from "../store/ordersApi";
+import type { Order } from "../store/ordersApi";
 import type { RootState } from "../store";
 import CheckoutSteps from "../components/checkout/CheckoutSteps";
 import OrderSummary from "../components/checkout/OrderSummary";
 
+const paymentOptions = [
+  {
+    value: "COD",
+    label: "Cash on delivery",
+    description: "Pay in cash when your order arrives.",
+    icon: Banknote,
+  },
+  {
+    value: "Card",
+    label: "Credit / debit card",
+    description: "Pay securely with Stripe. Your card details never touch our servers.",
+    icon: CreditCard,
+  },
+] as const;
+
 export default function ConfirmOrderPage() {
   const dispatch = useDispatch();
   const { items, shippingInfo } = useSelector((state: RootState) => state.cart);
-  const [createOrder, { isLoading }] = useCreateOrderMutation();
+  const [createOrder, { isLoading: isPlacing }] = useCreateOrderMutation();
+  const [createCheckoutSession, { isLoading: isStartingPayment }] = useCreateCheckoutSessionMutation();
+  const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("COD");
   const [errorMessage, setErrorMessage] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState("");
+  const [redirectingToPayment, setRedirectingToPayment] = useState(false);
+  const isLoading = isPlacing || isStartingPayment || redirectingToPayment;
 
-  // Once the cart is cleared after placing the order, go to the order page
-  // instead of falling into the empty-cart redirect below.
+  // Once the cart is cleared after placing the order, go to the order page (or
+  // stay put while the browser leaves for Stripe) instead of falling into the
+  // empty-cart redirect below.
+  if (redirectingToPayment) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <Lock className="mx-auto h-8 w-8 animate-pulse text-blue-600" />
+        <p className="mt-4 text-slate-600">Taking you to secure payment...</p>
+      </div>
+    );
+  }
   if (placedOrderId) {
-    return <Navigate to="/dashboard/orders/$orderId" params={{ orderId: placedOrderId }} search={{ success: true }} />;
+    return (
+      <Navigate
+        to="/dashboard/orders/$orderId"
+        params={{ orderId: placedOrderId }}
+        search={paymentMethod === "COD" ? { success: true } : {}}
+      />
+    );
   }
   if (items.length === 0) return <Navigate to="/cart" />;
   if (!shippingInfo) return <Navigate to="/shipping" />;
@@ -32,8 +67,21 @@ export default function ConfirmOrderPage() {
       const { order } = await createOrder({
         orderItems: items.map((i) => ({ product: i.product, quantity: i.quantity })),
         shippingInfo,
-        paymentMethod: "COD",
+        paymentMethod,
       }).unwrap();
+
+      if (paymentMethod === "Card") {
+        try {
+          const { url } = await createCheckoutSession(order._id).unwrap();
+          setRedirectingToPayment(true);
+          dispatch(clearCart());
+          window.location.assign(url);
+          return;
+        } catch {
+          // The order exists and holds its stock; it can be paid from the order page
+        }
+      }
+
       setPlacedOrderId(order._id);
       dispatch(clearCart());
     } catch (err) {
@@ -66,9 +114,35 @@ export default function ConfirmOrderPage() {
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-              <Banknote className="h-5 w-5 text-blue-600" /> Payment
+              <CreditCard className="h-5 w-5 text-blue-600" /> Payment
             </h2>
-            <p className="mt-3 text-sm text-slate-700">Cash on delivery</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {paymentOptions.map(({ value, label, description, icon: Icon }) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
+                    paymentMethod === value
+                      ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={value}
+                    checked={paymentMethod === value}
+                    onChange={() => setPaymentMethod(value)}
+                    className="mt-1 accent-blue-600"
+                  />
+                  <span>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                      <Icon className="h-4 w-4 text-slate-500" /> {label}
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-500">{description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -109,7 +183,9 @@ export default function ConfirmOrderPage() {
             disabled={isLoading}
             className="mt-6 w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
           >
-            {isLoading ? "Placing order..." : "Place order"}
+            {paymentMethod === "Card"
+              ? isLoading ? "Starting payment..." : "Continue to payment"
+              : isLoading ? "Placing order..." : "Place order"}
           </button>
         </OrderSummary>
       </div>

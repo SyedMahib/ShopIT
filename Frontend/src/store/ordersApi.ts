@@ -18,6 +18,8 @@ export interface ShippingInfo {
 
 export type OrderStatus = "Processing" | "Shipped" | "Delivered" | "Cancelled";
 
+export type PaymentStatus = "unpaid" | "paid" | "refunded";
+
 export interface Order {
   _id: string;
   orderItems: OrderItem[];
@@ -27,8 +29,9 @@ export interface Order {
   shippingAmount: number;
   totalAmount: number;
   paymentMethod: "COD" | "Card";
-  paymentInfo?: { id?: string; status?: string };
+  paymentInfo?: { id?: string; status?: PaymentStatus };
   orderStatus: OrderStatus;
+  paidAt?: string;
   deliveredAt?: string;
   cancelledAt?: string;
   user?: string | { _id: string; name: string; email: string };
@@ -73,6 +76,20 @@ export const ordersApi = createApi({
       }),
       invalidatesTags: ["Orders"],
     }),
+    // Returns the Stripe Checkout page to send the customer to
+    createCheckoutSession: builder.mutation<{ url: string }, string>({
+      query: (orderId) => ({
+        url: `/payment/checkout/${orderId}`,
+        method: "POST",
+      }),
+    }),
+    confirmPayment: builder.mutation<{ paymentStatus?: PaymentStatus }, string>({
+      query: (orderId) => ({
+        url: `/payment/confirm/${orderId}`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, orderId) => ["Orders", { type: "Orders", id: orderId }],
+    }),
     cancelOrder: builder.mutation<OrderDetailsResponse, string>({
       query: (orderId) => ({
         url: `/orders/${orderId}/cancel`,
@@ -83,5 +100,11 @@ export const ordersApi = createApi({
   }),
 });
 
-export const { useGetMyOrdersQuery, useGetOrderDetailsQuery, useCreateOrderMutation, useCancelOrderMutation } =
-  ordersApi;
+export const {
+  useGetMyOrdersQuery,
+  useGetOrderDetailsQuery,
+  useCreateOrderMutation,
+  useCreateCheckoutSessionMutation,
+  useConfirmPaymentMutation,
+  useCancelOrderMutation,
+} = ordersApi;

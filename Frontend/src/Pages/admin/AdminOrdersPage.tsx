@@ -4,7 +4,8 @@ import { Trash2 } from "lucide-react";
 import { useDeleteOrderMutation, useGetAllOrdersQuery, useUpdateOrderStatusMutation } from "../../store/adminApi";
 import type { OrderStatus } from "../../store/ordersApi";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
-import { nextStatuses } from "../../components/orders/orderStatus";
+import { isAwaitingPayment, nextStatuses } from "../../components/orders/orderStatus";
+import { AwaitingPaymentTag } from "../../components/orders/OrderCard";
 
 const filters: ("All" | OrderStatus)[] = ["All", "Processing", "Shipped", "Delivered", "Cancelled"];
 
@@ -95,6 +96,11 @@ export default function AdminOrdersPage() {
               visible.map((order) => {
                 const customer = typeof order.user === "object" ? order.user : undefined;
                 const busy = busyId === order._id;
+                const awaitingPayment = isAwaitingPayment(order);
+                // Unpaid card orders can't ship until the customer pays
+                const actions = nextStatuses[order.orderStatus].filter(
+                  (status) => !(status === "Shipped" && awaitingPayment),
+                );
                 return (
                   <tr key={order._id} className={busy ? "opacity-50" : ""}>
                     <td className="px-4 py-3">
@@ -120,11 +126,14 @@ export default function AdminOrdersPage() {
                       ${order.totalAmount.toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
-                      <OrderStatusBadge status={order.orderStatus} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <OrderStatusBadge status={order.orderStatus} />
+                        {awaitingPayment && <AwaitingPaymentTag />}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        {nextStatuses[order.orderStatus].map((status) => (
+                        {actions.map((status) => (
                           <button
                             key={status}
                             type="button"

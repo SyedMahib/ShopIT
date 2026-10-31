@@ -18,9 +18,15 @@ export interface IOrderItem {
   product: mongoose.Types.ObjectId;
 }
 
+export const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+// Only card orders have payment info. id is the Stripe PaymentIntent once paid,
+// sessionId the latest Stripe Checkout Session started for the order.
 export interface IPaymentInfo {
   id?: string;
-  status?: string;
+  sessionId?: string;
+  status?: PaymentStatus;
 }
 
 export const ORDER_STATUSES = ["Processing", "Shipped", "Delivered", "Cancelled"] as const;
@@ -37,6 +43,7 @@ export interface IOrder extends Document {
   shippingAmount: number;
   totalAmount: number;
   orderStatus: OrderStatus;
+  paidAt?: Date;
   deliveredAt?: Date;
   cancelledAt?: Date;
   createdAt?: Date;
@@ -109,7 +116,11 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentInfo: {
       id: String,
-      status: String,
+      sessionId: String,
+      status: {
+        type: String,
+        enum: [...PAYMENT_STATUSES],
+      },
     },
     itemsPrice: {
       type: Number,
@@ -135,6 +146,7 @@ const orderSchema = new Schema<IOrder>(
       },
       default: "Processing",
     },
+    paidAt: Date,
     deliveredAt: Date,
     cancelledAt: Date,
   },

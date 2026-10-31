@@ -1,16 +1,21 @@
 import { Link, useParams, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { ChevronLeft, CreditCard, MapPin, User } from "lucide-react";
+import { ChevronLeft, CreditCard, Loader2, MapPin, User } from "lucide-react";
 import defaultProductImage from "../assets/default_product.png";
 import orderSuccessImage from "../assets/order_success.png";
-import { useCancelOrderMutation, useGetOrderDetailsQuery } from "../store/ordersApi";
-import type { OrderStatus } from "../store/ordersApi";
+import {
+  useCancelOrderMutation,
+  useConfirmPaymentMutation,
+  useCreateCheckoutSessionMutation,
+  useGetOrderDetailsQuery,
+} from "../store/ordersApi";
+import type { Order, OrderStatus } from "../store/ordersApi";
 import { useUpdateOrderStatusMutation } from "../store/adminApi";
 import type { RootState } from "../store";
 import OrderSummary from "../components/checkout/OrderSummary";
 import OrderStatusBadge from "../components/orders/OrderStatusBadge";
-import { nextStatuses } from "../components/orders/orderStatus";
+import { isAwaitingPayment, nextStatuses } from "../components/orders/orderStatus";
 
 function errorMessage(err: unknown, fallback: string) {
   return (err as { data?: { message?: string } })?.data?.message || fallback;
@@ -24,14 +29,36 @@ function formatDate(dateStr: string) {
   });
 }
 
+function paymentStatusText(order: Order) {
+  if (order.paymentMethod === "COD") {
+    return order.orderStatus === "Delivered" ? "Paid on delivery" : "Pay in cash when it's delivered";
+  }
+  switch (order.paymentInfo?.status) {
+    case "paid":
+      return order.paidAt ? `Paid on ${formatDate(order.paidAt)}` : "Paid";
+    case "refunded":
+      return "Refunded";
+    default:
+      return order.orderStatus === "Cancelled" ? "Not paid" : "Awaiting payment";
+  }
+}
+
 export default function OrderDetailsPage() {
   const { orderId } = useParams({ from: "/protected/dashboard/orders/$orderId" });
-  const { success } = useSearch({ from: "/protected/dashboard/orders/$orderId" });
+  const { success, payment } = useSearch({ from: "/protected/dashboard/orders/$orderId" });
   const { data, isLoading, error, refetch } = useGetOrderDetailsQuery(orderId);
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
   const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+  const [createCheckoutSession, { isLoading: isStartingPayment }] = useCreateCheckoutSessionMutation();
+  const [confirmPayment, { isLoading: isConfirming, isUninitialized: notConfirmedYet }] =
+    useConfirmPaymentMutation();
   const [actionError, setActionError] = useState("");
+
+  // Back from Stripe: check the payment right away instead of waiting for the webhook
+  useEffect(() => {
+    if (payment === "success") confirmPayment(orderId);
+  }, [payment, orderId, confirmPayment]);
 
   if (isLoading) {
     return (
@@ -62,10 +89,26 @@ export default function OrderDetailsPage() {
   const customer = typeof order.user === "object" ? order.user : undefined;
   const isOwner = customer?._id === currentUser?._id;
   const canCancel = isOwner && order.orderStatus === "Processing";
-  const adminNext = isAdmin ? nextStatuses[order.orderStatus] : [];
+  const awaitingPayment = isAwaitingPayment(order);
+  const checkingPayment = payment === "success" && awaitingPayment && (notConfirmedYet || isConfirming);
+  const adminNext = isAdmin
+    ? nextStatuses[order.orderStatus].filter((status) => !(status === "Shipped" && awaitingPayment))
+    : [];
+
+  const handlePayNow = async () => {
+    setActionError("");
+    try {
+      const { url } = await createCheckoutSession(order._id).unwrap();
+      window.location.assign(url);
+    } catch (err) {
+      setActionError(errorMessage(err, "Could not start the payment. Please try again."));
+      refetch();
+    }
+  };
 
   const handleCancel = async () => {
-    if (!window.confirm("Cancel this order? This can't be undone.")) return;
+    const refundNote = order.paymentInfo?.status === "paid" ? " Your card payment will be refunded." : "";
+    if (!window.confirm(`Cancel this order? This can't be undone.${refundNote}`)) return;
     setActionError("");
     try {
       await cancelOrder(order._id).unwrap();
@@ -108,6 +151,41 @@ export default function OrderDetailsPage() {
           <img src={orderSuccessImage} alt="" className="h-24 w-24 object-contain" />
           <h2 className="mt-3 text-xl font-bold text-emerald-800">Thank you! Your order has been placed.</h2>
           <p className="mt-1 text-sm text-emerald-700">You'll pay in cash when it's delivered.</p>
+        </div>
+      )}
+
+      {payment === "success" && order.paymentInfo?.status === "paid" && (
+        <div className="mb-8 flex flex-col items-center rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+          <img src={orderSuccessImage} alt="" className="h-24 w-24 object-contain" />
+          <h2 className="mt-3 text-xl font-bold text-emerald-800">Payment received! Your order has been placed.</h2>
+          <p className="mt-1 text-sm text-emerald-700">We've emailed you a confirmation.</p>
+        </div>
+      )}
+
+      {checkingPayment && (
+        <div className="mb-8 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+          <Loader2 className="h-4 w-4 animate-spin" /> Confirming your payment...
+        </div>
+      )}
+
+      {awaitingPayment && isOwner && !checkingPayment && (
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div>
+            <h2 className="font-semibold text-amber-900">
+              {payment === "cancelled" ? "Payment not completed" : "Waiting for your payment"}
+            </h2>
+            <p className="mt-1 text-sm text-amber-800">
+              Your items are reserved for up to an hour. Complete the payment to confirm your order.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handlePayNow}
+            disabled={isStartingPayment}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+          >
+            <CreditCard className="h-4 w-4" /> {isStartingPayment ? "Opening payment..." : "Pay now"}
+          </button>
         </div>
       )}
 
@@ -221,8 +299,9 @@ export default function OrderDetailsPage() {
                 <CreditCard className="h-5 w-5 text-blue-600" /> Payment
               </h2>
               <p className="mt-3 text-sm text-slate-700">
-                {order.paymentMethod === "COD" ? "Cash on delivery" : "Card"}
+                {order.paymentMethod === "COD" ? "Cash on delivery" : "Card (Stripe)"}
               </p>
+              <p className="mt-1 text-sm text-slate-500">{paymentStatusText(order)}</p>
             </section>
           </div>
         </div>

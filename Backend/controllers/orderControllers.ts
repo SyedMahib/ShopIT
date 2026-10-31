@@ -5,6 +5,7 @@ import Order, { IOrder, OrderStatus } from "../models/order.js";
 import Product from "../models/product.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import { sendOrderEmail } from "../utils/orderEmails.js";
+import { isStripeConfigured, settlePaymentOnCancel } from "../utils/stripe.js";
 
 // Which status an order may move to from its current status
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
@@ -25,10 +26,13 @@ const restoreStock = async (order: IOrder): Promise<void> => {
 
 export const newOrder = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { orderItems, shippingInfo, paymentMethod, paymentInfo } = req.body;
+    const { orderItems, shippingInfo, paymentMethod } = req.body;
 
     if (!Array.isArray(orderItems) || orderItems.length === 0) {
       return next(new ErrorHandler("Please add items to your order", 400));
+    }
+    if (paymentMethod === "Card" && !isStripeConfigured()) {
+      return next(new ErrorHandler("Card payments are not available right now", 503));
     }
 
     // Combine repeated products into one line each
@@ -98,7 +102,8 @@ export const newOrder = catchAsyncErrors(
         shippingAmount,
         totalAmount,
         paymentMethod,
-        paymentInfo,
+        // Never taken from the client: card orders start unpaid until Stripe confirms the payment
+        ...(paymentMethod === "Card" && { paymentInfo: { status: "unpaid" } }),
         user: (req.user as any)?._id,
       });
     } catch (error) {
@@ -107,7 +112,8 @@ export const newOrder = catchAsyncErrors(
       throw error;
     }
 
-    sendOrderEmail(order, req.user as any, "Placed");
+    // Card orders are confirmed by email once the payment goes through
+    if (order.paymentMethod === "COD") sendOrderEmail(order, req.user as any, "Placed");
 
     res.status(200).json({
       order,
@@ -168,6 +174,7 @@ export const cancelMyOrder = catchAsyncErrors(
       );
     }
 
+    await settlePaymentOnCancel(order);
     order.orderStatus = "Cancelled";
     order.cancelledAt = new Date();
     await order.save();
@@ -210,6 +217,11 @@ export const updateOrder = catchAsyncErrors(
       );
     }
 
+    if (status === "Shipped" && order.paymentMethod === "Card" && order.paymentInfo?.status !== "paid") {
+      return next(new ErrorHandler("This order hasn't been paid yet and can't be shipped", 400));
+    }
+
+    if (status === "Cancelled") await settlePaymentOnCancel(order);
     order.orderStatus = status;
     if (status === "Delivered") order.deliveredAt = new Date();
     if (status === "Cancelled") order.cancelledAt = new Date();

@@ -1,5 +1,5 @@
 import { Clock, PackageCheck, Truck, XCircle } from "lucide-react";
-import type { OrderStatus } from "../../store/ordersApi";
+import type { Order, OrderStatus } from "../../store/ordersApi";
 
 export const statusConfig: Record<OrderStatus, { color: string; bg: string; icon: typeof Clock }> = {
   Processing: {
@@ -31,3 +31,7 @@ export const nextStatuses: Record<OrderStatus, OrderStatus[]> = {
   Delivered: [],
   Cancelled: [],
 };
+
+// A card order whose payment hasn't gone through yet (it can't ship until it's paid)
+export const isAwaitingPayment = (order: Order) =>
+  order.paymentMethod === "Card" && order.paymentInfo?.status === "unpaid" && order.orderStatus === "Processing";

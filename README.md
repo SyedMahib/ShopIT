@@ -2,14 +2,14 @@
 
 A full-stack e-commerce store for IT and electronics products, built with the MERN stack and TypeScript.
 
-Customers can browse and search products, add them to a cart, check out with cash on delivery, follow their orders and review what they bought. Admins manage orders, products and users from an admin panel.
+Customers can browse and search products, add them to a cart, check out with cash on delivery or a card (Stripe), follow their orders and review what they bought. Admins manage orders, products and users from an admin panel.
 
 ## Features
 
 **Shopping**
 - Product catalogue with search, category/price/rating filters and pagination
 - Product pages with image gallery, stock status and customer reviews
-- Cart saved in the browser, checkout with shipping details, cash on delivery
+- Cart saved in the browser, checkout with shipping details, cash on delivery or card payment through Stripe Checkout (refunded automatically when a paid order is cancelled)
 - Prices, tax (15%) and shipping ($25, free over $100) are always calculated on the server
 
 **Accounts**
@@ -38,7 +38,7 @@ Customers can browse and search products, add them to a cart, check out with cas
 | Frontend | React 19, TypeScript, Vite, TanStack Router, Redux Toolkit (RTK Query), Tailwind CSS 4 |
 | Backend | Node.js, Express 5, TypeScript, Mongoose 9 (MongoDB) |
 | Auth | JWT in an httpOnly cookie, Passport (Google OAuth 2.0), bcrypt |
-| Services | Cloudinary (images), Nodemailer + SMTP (email) |
+| Services | Stripe (card payments), Cloudinary (images), Nodemailer + SMTP (email) |
 
 ## Project structure
 
@@ -86,7 +86,7 @@ Copy the example config and fill in your values:
 cp Backend/config/config.env.example Backend/config/config.env
 ```
 
-At minimum set `DB_LOCAL_URI` and `JWT_SECRET`. Email, Google sign-in and image uploads only work once their settings are filled in; the rest of the app runs without them.
+At minimum set `DB_LOCAL_URI` and `JWT_SECRET`. Email, Google sign-in, card payments and image uploads only work once their settings are filled in; the rest of the app runs without them.
 
 ### 3. Add sample products (optional)
 
@@ -110,6 +110,15 @@ npm run dev              # frontend on http://localhost:5173
 ```
 
 The frontend forwards `/api` requests to the backend, so open **http://localhost:5173**.
+
+**Card payments:** set `STRIPE_SECRET_KEY` to your Stripe test key, then forward webhooks to the backend with the [Stripe CLI](https://docs.stripe.com/stripe-cli) in a third terminal:
+
+```bash
+stripe listen --forward-to localhost:3000/api/v1/payment/webhook \
+  --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired
+```
+
+Put the `whsec_...` secret it prints into `STRIPE_WEBHOOK_SECRET` and restart the backend. Pay with the test card `4242 4242 4242 4242`, any future expiry date and any CVC. Unpaid card orders are cancelled, and their stock released, when the Stripe checkout page expires after an hour.
 
 ### 5. Make yourself an admin
 

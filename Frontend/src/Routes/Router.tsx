@@ -157,8 +157,11 @@ const myOrdersRoute = createRoute({
 const orderDetailsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: "/dashboard/orders/$orderId",
-  validateSearch: (search: Record<string, unknown>): { success?: boolean } =>
-    search.success === true || search.success === "true" ? { success: true } : {},
+  // success: COD order just placed. payment: back from the Stripe checkout page.
+  validateSearch: (search: Record<string, unknown>): { success?: boolean; payment?: "success" | "cancelled" } => ({
+    ...((search.success === true || search.success === "true") && { success: true }),
+    ...((search.payment === "success" || search.payment === "cancelled") && { payment: search.payment }),
+  }),
   component: OrderDetailsPage,
 });
 

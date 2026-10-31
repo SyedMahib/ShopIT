@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, CreditCard, MapPin, ShoppingBag } from "lucide-react";
 import type { Order } from "../../store/ordersApi";
-import { statusConfig } from "./orderStatus";
+import { isAwaitingPayment, statusConfig } from "./orderStatus";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
@@ -33,6 +33,7 @@ export default function OrderCard({ order }: { order: Order }) {
               <StatusIcon className="h-3 w-3" />
               {order.orderStatus}
             </span>
+            {isAwaitingPayment(order) && <AwaitingPaymentTag />}
           </div>
           <p className="mt-1 truncate text-sm font-medium text-slate-700">{itemNames}</p>
           <p className="mt-0.5 text-xs text-slate-500">{itemCount} item{itemCount > 1 ? "s" : ""}</p>
@@ -60,6 +61,14 @@ export default function OrderCard({ order }: { order: Order }) {
         View Details <ChevronRight className="h-3 w-3" />
       </Link>
     </div>
+  );
+}
+
+export function AwaitingPaymentTag() {
+  return (
+    <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">
+      Awaiting payment
+    </span>
   );
 }
 

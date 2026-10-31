@@ -8,7 +8,7 @@ const content: Record<OrderEmailEvent, { subject: string; heading: string; intro
   Placed: {
     subject: "Your ShopIT order is confirmed",
     heading: "Thanks for your order!",
-    intro: "We've received your order and are getting it ready. You'll pay in cash when it's delivered.",
+    intro: "We've received your order and are getting it ready.",
   },
   Shipped: {
     subject: "Your ShopIT order has shipped",
@@ -23,8 +23,23 @@ const content: Record<OrderEmailEvent, { subject: string; heading: string; intro
   Cancelled: {
     subject: "Your ShopIT order was cancelled",
     heading: "Your order has been cancelled",
-    intro: "Your order has been cancelled. If you paid in advance, you'll be refunded. If this wasn't expected, please contact support.",
+    intro: "Your order has been cancelled. If this wasn't expected, please contact support.",
   },
+};
+
+// Extra sentence about the payment for placed and cancelled orders
+const paymentNote = (order: IOrder, event: OrderEmailEvent): string => {
+  if (event === "Placed") {
+    return order.paymentMethod === "COD"
+      ? "You'll pay in cash when it's delivered."
+      : "Your card payment was successful.";
+  }
+  if (event === "Cancelled" && order.paymentMethod === "Card") {
+    return order.paymentInfo?.status === "refunded"
+      ? "Your card payment has been refunded; it can take 5-10 business days to show on your statement."
+      : "The payment wasn't completed, so your card was not charged.";
+  }
+  return "";
 };
 
 /**
@@ -38,7 +53,8 @@ export const sendOrderEmail = (
 ): void => {
   if (!user?.email) return;
 
-  const { subject, heading, intro } = content[event];
+  const { subject, heading } = content[event];
+  const intro = `${content[event].intro} ${paymentNote(order, event)}`.trim();
   const orderId = String(order._id);
   const { address, city, zipCode, country } = order.shippingInfo;
 
