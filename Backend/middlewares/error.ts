@@ -54,8 +54,10 @@ if (err.name === "TokenExpiredError") {
       stack: err?.stack,
     });
   } else {
+    // Unexpected errors can carry internal details (database, SMTP...): log them, don't send them
+    if (error.statusCode === 500) console.log(err);
     res.status(error.statusCode).json({
-      message: error.message,
+      message: error.statusCode === 500 ? "Something went wrong, please try again later" : error.message,
     });
   }
 };

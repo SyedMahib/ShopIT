@@ -27,7 +27,7 @@ export const authApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: "/api/v1", credentials: "include" }),
   tagTypes: ["User"],
   endpoints: (builder) => ({
-    register: builder.mutation<{ success: boolean; token: string; user: User }, RegisterRequest>({
+    register: builder.mutation<{ success: boolean }, RegisterRequest>({
       query: (body) => ({
         url: "/register",
         method: "POST",
@@ -35,7 +35,7 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
-    login: builder.mutation<{ success: boolean; token: string }, LoginRequest>({
+    login: builder.mutation<{ success: boolean }, LoginRequest>({
       query: (body) => ({
         url: "/login",
         method: "POST",

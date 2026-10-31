@@ -20,22 +20,26 @@ import {
 } from "../controllers/authControllers.js";
 import { authorizeRoles, isAuthenticatedUser } from "../middlewares/auth.js";
 import { uploadAvatarImage } from "../middlewares/upload.js";
+import { authLimiter, emailLimiter } from "../middlewares/rateLimit.js";
 
 const router = express.Router();
 
-router.route("/register").post(registerUser);
-router.route("/login").post(loginUser);
+router.route("/register").post(authLimiter, registerUser);
+router.route("/login").post(authLimiter, loginUser);
 router.route("/logout").get(logOutUser);
 
 // Google OAuth routes
-router.route("/auth/google").get(googleLogin, passport.authenticate("google", { scope: ["profile", "email"] }));
+// session: false - the JWT cookie set in googleAuthCallback keeps the user signed in
+router
+  .route("/auth/google")
+  .get(googleLogin, passport.authenticate("google", { scope: ["profile", "email"], session: false }));
 router.route("/auth/google/callback").get(
-  passport.authenticate("google", { failureRedirect: `${process.env.FRONTEND_URL}/login` }),
+  passport.authenticate("google", { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login` }),
   googleAuthCallback
 );
 
-router.route("/password/forgot").post(forgotPassword);
-router.route("/password/reset/:token").put(resetPassword);
+router.route("/password/forgot").post(emailLimiter, forgotPassword);
+router.route("/password/reset/:token").put(authLimiter, resetPassword);
 
 router.route("/me").get(isAuthenticatedUser, getUserProfile);
 router.route("/me/update").put(isAuthenticatedUser, updateProfile);

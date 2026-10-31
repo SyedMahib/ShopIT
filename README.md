@@ -142,6 +142,16 @@ Log out and in again. **Admin Panel** now appears in the account menu. After tha
 | `Frontend/` | `npm run build` | Type-check and build the frontend to `Frontend/dist/` |
 | `Frontend/` | `npm run lint` | Lint with Oxlint |
 
+## Production
+
+With `NODE_ENV=production` the backend also serves the built frontend from `Frontend/dist/`, so the whole shop runs on one domain (set `FRONTEND_URL` and `BACKEND_URL` to that same URL). Production mode also:
+
+- marks the login cookie `Secure` (HTTPS only) and trusts one reverse proxy in front of the app
+- hides internal error details from responses (they are logged instead)
+- uses `DB_URI` instead of `DB_LOCAL_URI`
+
+Always on: security headers (Helmet), and rate limits on login, register and password reset (10 failed attempts per 15 minutes) and on forgot password and the contact form (5 per hour).
+
 ## Author
 
 Syed Mahib · [GitHub](https://github.com/SyedMahib)

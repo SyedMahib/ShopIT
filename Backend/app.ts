@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "Backend/config/config.env" });
 
+import path from "path";
 import express from "express";
+import helmet from "helmet";
 import passport from "passport";
-import session from "express-session";
 import { connectDatabase } from "./config/dbConnect.js";
 import productRoutes from "./routes/products.js";
 import authRoutes from "./routes/auth.js";
@@ -16,6 +17,7 @@ import errorMiddleware from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import "./config/passport.config.js";
 import User from "./models/user.js";
+import ErrorHandler from "./utils/errorHandler.js";
 
 process.on("uncaughtException", (err) => {
   console.log(`Error: ${err}`);
@@ -29,6 +31,22 @@ if (!process.env.JWT_SECRET) {
 }
 
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+
+// Hosts like Render sit behind one HTTPS proxy: trust it for the client IP
+// (rate limiting) and for knowing the request was HTTPS (secure cookies)
+if (isProduction) app.set("trust proxy", 1);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        // Product images can come from any https host the admin enters (Cloudinary, Unsplash...)
+        "img-src": ["'self'", "data:", "https:"],
+      },
+    },
+  }),
+);
 
 // Connect to database
 connectDatabase();
@@ -39,20 +57,7 @@ app.post("/api/v1/payment/webhook", express.raw({ type: "application/json" }), s
 app.use(express.json());
 app.use(cookieParser());
 
-// Passport session support
-app.use(
-  session({
-    secret: process.env.JWT_SECRET as string,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    },
-  })
-);
 app.use(passport.initialize());
-app.use(passport.session());
 
 
 // Routes
@@ -84,6 +89,21 @@ app.get("/api/avatar/:id", async (req, res) => {
   }
 });
 
+
+// Unknown API routes get a JSON error instead of the frontend page
+app.use("/api", (req, res, next) => {
+  next(new ErrorHandler(`Route not found: ${req.method} ${req.originalUrl}`, 404));
+});
+
+// In production the backend also serves the built frontend, so both share one domain
+if (isProduction) {
+  const frontendDist = path.resolve("Frontend/dist");
+  app.use(express.static(frontendDist));
+  // Every other non-API path is a page of the React app
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 // Using Error Middlewares
 

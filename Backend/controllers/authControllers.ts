@@ -3,7 +3,7 @@ import { deleteImages, uploadAvatar } from "../utils/cloudinary.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import User from "../models/user.js";
 import ErrorHandler from "../utils/errorHandler.js";
-import sendToken from "../utils/sendToken.js";
+import sendToken, { setTokenCookie, tokenCookieOptions } from "../utils/sendToken.js";
 import { getResetPasswordTemplate } from "../utils/emailTemplates.js";
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
@@ -24,15 +24,7 @@ export const googleAuthCallback = catchAsyncErrors(
     }
 
     // Set JWT cookie manually so we can redirect after
-    const token = user.getJwtToken();
-    const options = {
-      expires: new Date(
-        Date.now() +
-          Number(process.env.JWT_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
-      ),
-      httpOnly: true,
-    };
-    res.cookie("token", token, options);
+    setTokenCookie(user, res);
 
     // Redirect to frontend — the app will fetch /api/v1/me on mount
     res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}`);
@@ -55,7 +47,8 @@ export const loginUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    // Strings only: an object like { "$ne": null } would otherwise match any user
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
       return next(new ErrorHandler("Please enter email and password", 400));
     }
 
@@ -81,10 +74,7 @@ export const loginUser = catchAsyncErrors(
 // LogOut a User => /api/v1/logout
 export const logOutUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    res.cookie("token", null, {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    })
+    res.clearCookie("token", tokenCookieOptions());
 
     res.status(200).json({
       message: "Logged Out",
@@ -97,7 +87,7 @@ export const forgotPassword = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     // Finding user in database
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email: String(req.body.email ?? "") });
 
     // Same reply whether or not the account exists, so this endpoint
     // can't be used to find out which emails are registered
