@@ -152,6 +152,16 @@ With `NODE_ENV=production` the backend also serves the built frontend from `Fron
 
 Always on: security headers (Helmet), and rate limits on login, register and password reset (10 failed attempts per 15 minutes) and on forgot password and the contact form (5 per hour).
 
+### Deploy to Render
+
+[`render.yaml`](render.yaml) describes the whole service. In the Render dashboard choose **New → Blueprint**, pick this repository and fill in the values it asks for (`JWT_SECRET` is generated for you). `FRONTEND_URL` and `BACKEND_URL` are both the service URL, e.g. `https://shopit.onrender.com`.
+
+- **Database:** a MongoDB Atlas cluster; allow access from anywhere (`0.0.0.0/0`), since Render's free plan has no fixed IP. Load sample products with `DB_LOCAL_URI="<atlas uri>" npm run seeder`.
+- **Email:** Render's free plan blocks SMTP ports 25, 465 and 587, so use a provider that accepts port 2525 (e.g. Brevo).
+- **Google sign-in:** add `https://<your-app>.onrender.com/api/v1/auth/google/callback` as an authorized redirect URI.
+- **Stripe:** add a webhook endpoint `https://<your-app>.onrender.com/api/v1/payment/webhook` with the three `checkout.session.*` events and use its signing secret.
+- The free plan sleeps after 15 minutes without traffic (the first visit then takes about a minute). An uptime monitor pinging `/api/health` every 10 minutes keeps it awake.
+
 ## Author
 
 Syed Mahib · [GitHub](https://github.com/SyedMahib)

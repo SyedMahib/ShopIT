@@ -1,0 +1,58 @@
+# Render Blueprint: Dashboard > New > Blueprint, pick this repo.
+# One web service runs the API and serves the built frontend on the same domain.
+services:
+  - type: web
+    name: shopit
+    runtime: node
+    plan: free
+    # --include=dev: TypeScript and Vite are dev dependencies but are needed to build
+    buildCommand: >-
+      npm install --include=dev && npm run build &&
+      npm install --include=dev --prefix Frontend && npm run build --prefix Frontend
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: JWT_COOKIE_EXPIRE
+        value: "7"
+      # sync: false - Render asks for these values when the Blueprint is created
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: DB_URI
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      # Render's free plan blocks ports 25, 465 and 587; use 2525
+      - key: SMTP_PORT
+        value: "2525"
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: ShopIT
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

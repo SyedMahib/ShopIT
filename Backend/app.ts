@@ -68,6 +68,11 @@ app.use("/api/v1", wishlistRoutes);
 app.use("/api/v1", contactRoutes);
 app.use("/api/v1", paymentRoutes);
 
+// Health check for the host (and uptime monitors): answers without touching the database
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Proxy Google avatars (Google blocks direct cross-origin requests)
 app.get("/api/avatar/:id", async (req, res) => {
   try {
